@@ -162,4 +162,260 @@
             <div class="card">
                 <div class="card-header"><h2 class="card-title">Paramètres Généraux</h2></div>
                 <div class="form-group" style="max-width:300px;"><label class="form-label" for="threshold">Seuil d'alerte (bouteilles restantes)</label><input type="number" class="form-control" id="threshold" value="12" min="0"></div>
-                <div class="form-actions"><button
+                <div class="form-actions"><button class="btn btn-secondary" onclick="exportData()">📊 Exporter (CSV)</button><button class="btn btn-secondary" onclick="printInventory()">🖨️ Imprimer l'Inventaire</button></div>
+            </div>
+        </div>
+    </div>
+    <div id="toast" class="toast"><span id="toastMsg"></span></div>
+    <div class="footer-by-osmaweb">Conçu et développé par Osmaweb & Gemini</div>
+
+<script>
+// ===================================================================================
+// CONFIGURATION SUPABASE
+// ===================================================================================
+const SUPABASE_URL = "https://jvthgikhwaxiqxsjmacl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dGhnaWtod2F4aXF4c2ptYWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzNDg4MjMsImV4cCI6MjA2NDkyNDgyM30.f5ixqtktLbDRPT2IyJodmMBbYD2ZK7TRfCNszz2nM48";
+
+const apiHeaders = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+};
+
+// ===================================================================================
+// ÉTAT DE L'APPLICATION
+// ===================================================================================
+let state = {
+    wines: [],
+    transactions: [],
+    threshold: 12
+};
+
+// ===================================================================================
+// INITIALISATION
+// ===================================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    initApp();
+});
+
+async function initApp() {
+    // 1. On active l'interface tout de suite pour que les boutons répondent
+    initEventListeners();
+    addWineEntry();
+    showToast('Connexion à la base de données...');
+
+    // 2. On charge les données en arrière-plan
+    await loadDataFromSupabase();
+
+    // 3. On met à jour toute l'interface avec les données chargées
+    updateAll();
+    showToast('Application prête !');
+}
+
+function initEventListeners() {
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
+    document.getElementById('quickForm').addEventListener('submit', handleQuickTransaction);
+    document.getElementById('transactionForm').addEventListener('submit', handleTransaction);
+    document.getElementById('addWineForm').addEventListener('submit', handleAddWine);
+    document.getElementById('addWineBtn').addEventListener('click', () => addWineEntry());
+    document.getElementById('searchInput').addEventListener('input', updateTransactionsTable);
+    document.getElementById('wineSearch').addEventListener('input', updateWineList);
+    document.getElementById('threshold').addEventListener('change', e => { state.threshold = parseInt(e.target.value) || 0; updateDashboard(); });
+    document.getElementById('date').valueAsDate = new Date();
+    initRealTimeValidation();
+}
+
+// ===================================================================================
+// COMMUNICATION AVEC SUPABASE
+// ===================================================================================
+async function loadDataFromSupabase() {
+    try {
+        const [winesRes, transactionsRes] = await Promise.all([
+            fetch(`${SUPABASE_URL}/rest/v1/wines?select=*`, { headers: apiHeaders }),
+            fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`, { headers: apiHeaders })
+        ]);
+        if (!winesRes.ok || !transactionsRes.ok) throw new Error("Erreur réseau ou permissions (Vérifiez la sécurité RLS sur Supabase)");
+        state.wines = await winesRes.json();
+        state.transactions = await transactionsRes.json();
+    } catch (error) {
+        console.error("Erreur de chargement:", error);
+        showToast("Erreur: Impossible de charger les données.");
+    }
+}
+
+// Le reste du JavaScript est identique au précédent (gestionnaires, mises à jour UI, etc.)
+// ... (Copier-coller tout le reste du script à partir d'ici)
+async function handleAddWine(e) {
+    e.preventDefault();
+    setFormDisabled(true);
+    const name = document.getElementById('wineName').value.trim();
+    const type = document.getElementById('wineType').value;
+    const bottlesPerCase = parseInt(document.getElementById('bottlesPerCase').value);
+    if (!name || !type || !bottlesPerCase) { showToast('⚠️ Veuillez remplir tous les champs.'); setFormDisabled(false); return; }
+    if (state.wines.some(w => w.name.toLowerCase() === name.toLowerCase())) { showToast('⚠️ Ce nom de vin existe déjà.'); setFormDisabled(false); return; }
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/wines`, { method: 'POST', headers: apiHeaders, body: JSON.stringify({ name, type, bottles_per_case: bottlesPerCase, stock: 0 }) });
+        if (!response.ok) throw new Error('Échec de la création du vin.');
+        const newWine = await response.json();
+        state.wines.push(newWine[0]);
+        e.target.reset();
+        updateAll();
+        showToast('🍷 Vin ajouté au catalogue');
+    } catch (error) { showToast("Erreur lors de l'ajout du vin."); console.error(error); }
+    setFormDisabled(false);
+}
+
+async function handleQuickTransaction(e) { e.preventDefault(); await processTransaction(new FormData(e.target), 'quick'); }
+async function handleTransaction(e) { e.preventDefault(); await processTransaction(new FormData(e.target), 'detailed'); }
+
+async function processTransaction(formData, formType) {
+    setFormDisabled(true);
+    const type = formData.get(formType === 'quick' ? 'quickType' : 'type');
+    const reference = formData.get('reference') || 'Transaction rapide';
+    const date = formData.get('date') || new Date().toISOString().split('T')[0];
+    let winesInTx = [], stockCheckFailed = false;
+
+    if (formType === 'quick') {
+        const wineId = parseInt(formData.get('quickWine')), cases = parseInt(formData.get('quickQtyCases')) || 0, bottles = parseInt(formData.get('quickQtyBottles')) || 0;
+        const wine = state.wines.find(w => w.id === wineId);
+        if (wine && (cases > 0 || bottles > 0)) {
+            const quantity = (cases * wine.bottles_per_case) + bottles;
+            if (type === 'sortie' && wine.stock < quantity) stockCheckFailed = true;
+            winesInTx.push({ ...wine, quantity });
+        }
+    } else {
+        document.querySelectorAll('#wineEntries .wine-entry').forEach(entry => {
+            const wineId = parseInt(entry.querySelector('.wine-select').value), cases = parseInt(entry.querySelector('.wine-cases').value) || 0, bottles = parseInt(entry.querySelector('.wine-bottles').value) || 0;
+            const wine = state.wines.find(w => w.id === wineId);
+            if(wine && (cases > 0 || bottles > 0)) {
+                const quantity = (cases * wine.bottles_per_case) + bottles;
+                if (type === 'sortie' && wine.stock < quantity) stockCheckFailed = true;
+                winesInTx.push({ ...wine, quantity });
+            }
+        });
+    }
+
+    if (!type) { showToast('⚠️ Veuillez sélectionner un type.'); setFormDisabled(false); return; }
+    if (winesInTx.length === 0) { showToast('⚠️ Veuillez ajouter au moins un vin.'); setFormDisabled(false); return; }
+    if (stockCheckFailed) { showToast('⚠️ Stock insuffisant.'); setFormDisabled(false); return; }
+    
+    const multiplier = type === 'sortie' ? -1 : 1;
+    const stockUpdatePromises = winesInTx.map(txWine => {
+        const newStock = txWine.stock + (txWine.quantity * multiplier);
+        return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { method: 'PATCH', headers: apiHeaders, body: JSON.stringify({ stock: newStock }) });
+    });
+
+    try {
+        const stockUpdateResponses = await Promise.all(stockUpdatePromises);
+        stockUpdateResponses.forEach(res => { if (!res.ok) throw new Error('Échec mise à jour stock.'); });
+        const wines_involved = winesInTx.map(w => ({ id: w.id, name: w.name, quantity: w.quantity }));
+        const txResponse = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, { method: 'POST', headers: apiHeaders, body: JSON.stringify({ date, type, reference, wines_involved }) });
+        if (!txResponse.ok) throw new Error('Échec enregistrement transaction.');
+        await loadDataFromSupabase();
+        if (formType === 'quick') document.getElementById('quickForm').reset(); else resetTransactionForm();
+        updateAll();
+        showToast('✅ Transaction enregistrée.');
+    } catch (error) { showToast("Erreur lors de la transaction."); console.error(error); }
+    setFormDisabled(false);
+}
+
+async function deleteWine(id) {
+    if (state.transactions.some(t => (t.wines_involved || []).some(w => w.id === id))) return showToast('⚠️ Impossible : vin utilisé dans des transactions.');
+    if (!confirm('Voulez-vous vraiment supprimer ce vin ?')) return;
+    setFormDisabled(true);
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${id}`, { method: 'DELETE', headers: apiHeaders });
+        if (!response.ok) throw new Error('Échec suppression.');
+        state.wines = state.wines.filter(w => w.id !== id);
+        updateAll();
+        showToast('🗑️ Vin supprimé.');
+    } catch (error) { showToast("Erreur lors de la suppression."); }
+    setFormDisabled(false);
+}
+
+async function deleteTransaction(id) {
+    if (!confirm('Voulez-vous supprimer cette transaction ? Le stock sera recalculé.')) return;
+    setFormDisabled(true);
+    const tx = state.transactions.find(t => t.id === id);
+    if (!tx) return setFormDisabled(false);
+    const multiplier = tx.type === 'sortie' ? 1 : -1;
+    const stockUpdatePromises = (tx.wines_involved || []).map(txWine => {
+        const wineInState = state.wines.find(w => w.id === txWine.id);
+        if (!wineInState) return Promise.resolve();
+        const newStock = wineInState.stock + (txWine.quantity * multiplier);
+        return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { method: 'PATCH', headers: apiHeaders, body: JSON.stringify({ stock: newStock }) });
+    });
+    try {
+        await Promise.all(stockUpdatePromises);
+        const deleteTxResponse = await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, { method: 'DELETE', headers: apiHeaders });
+        if (!deleteTxResponse.ok) throw new Error('Échec suppression transaction.');
+        await loadDataFromSupabase();
+        updateAll();
+        showToast('🗑️ Transaction supprimée.');
+    } catch(error) { showToast("Erreur lors de l'annulation."); console.error(error); }
+    setFormDisabled(false);
+}
+
+function updateDashboard() {
+    const dashboardContainer = document.getElementById('lowStockDashboard');
+    if (state.wines.length === 0) { dashboardContainer.innerHTML = '<div class="alert alert-success" style="grid-column: 1 / -1;">Commencez par ajouter des vins à votre catalogue.</div>'; }
+    else {
+        const lowStockWines = [...state.wines].sort((a, b) => a.stock - b.stock).slice(0, 4);
+        dashboardContainer.innerHTML = lowStockWines.map(wine => {
+            let stockClass = '';
+            if (wine.stock <= state.threshold) stockClass = 'critical';
+            else if (wine.stock <= state.threshold * 2) stockClass = 'warning';
+            return `<div class="low-stock-card"><div class="info"><span class="name">${wine.name}</span><span class="type-badge badge-${wine.type}">${wine.type}</span></div><div class="stock ${stockClass}">${wine.stock}</div></div>`;
+        }).join('');
+    }
+    const inventoryBody = document.getElementById('detailedInventory');
+    if (state.wines.length === 0) { inventoryBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Votre inventaire est vide.</td></tr>'; }
+    else { inventoryBody.innerHTML = [...state.wines].sort((a,b) => a.name.localeCompare(b.name)).map(wine => { const cases = Math.floor(wine.stock / wine.bottles_per_case); const bottles = wine.stock % wine.bottles_per_case; return `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td>${cases}</td><td>${bottles}</td><td><strong>${wine.stock}</strong></td></tr>`; }).join(''); }
+}
+
+function updateTransactionsTable() {
+    const tbody = document.getElementById('transactionsTable');
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = state.transactions.filter(t => (t.date + t.reference + (t.wines_involved || []).map(w => w.name).join(' ')).toLowerCase().includes(search));
+    if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune transaction trouvée.</td></tr>'; return; }
+    tbody.innerHTML = filtered.map(t => `<tr><td>${new Date(t.date).toLocaleDateString('fr-FR')}</td><td><span class="status-badge status-${{entree:'in', sortie:'out', retour:'return'}[t.type]}">${t.type}</span></td><td>${(t.wines_involved || []).map(w => `${w.name} (${w.quantity})`).join(', ')}</td><td>${t.reference || 'N/A'}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteTransaction(${t.id})">Supprimer</button></td></tr>`).join('');
+}
+
+function updateWineList() {
+    const tbody = document.getElementById('wineList');
+    const search = document.getElementById('wineSearch').value.toLowerCase();
+    const filtered = state.wines.filter(w => w.name.toLowerCase().includes(search));
+    if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun vin ne correspond à votre recherche.</td></tr>'; return; }
+    tbody.innerHTML = [...filtered].sort((a,b) => a.name.localeCompare(b.name)).map(wine => `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td><span class="type-badge badge-${wine.type}">${wine.type}</span></td><td>${wine.bottles_per_case}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteWine(${wine.id})">Supprimer</button></td></tr>`).join('');
+}
+
+function updateAnalysisTable() {
+    const tbody = document.getElementById('analysisTable');
+    if (state.wines.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune donnée à analyser.</td></tr>'; return; }
+    const analysisData = state.wines.map(wine => {
+        const movements = { sortie: 0, retour: 0 };
+        state.transactions.forEach(t => { const wineInTx = (t.wines_involved || []).find(w => w.id === wine.id); if (wineInTx && movements.hasOwnProperty(t.type)) movements[t.type] += wineInTx.quantity; });
+        const netConsumption = movements.sortie - movements.retour;
+        const returnRate = movements.sortie > 0 ? ((movements.retour / movements.sortie) * 100).toFixed(1) : 0;
+        return { name: wine.name, type: wine.type, ...movements, netConsumption, returnRate };
+    });
+    tbody.innerHTML = analysisData.map(data => `<tr><td>${getWineEmoji(data.type)} ${data.name}</td><td>${data.sortie}</td><td>${data.retour}</td><td><strong>${data.netConsumption}</strong></td><td>${data.returnRate} %</td></tr>`).join('');
+}
+
+function setFormDisabled(isDisabled) { document.querySelectorAll('button, input, select').forEach(el => el.disabled = isDisabled); }
+function switchTab(tabName) { document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelector(`[data-tab="${tabName}"]`).classList.add('active'); document.getElementById(tabName).classList.add('active'); const updateFn = { 'dashboard': updateDashboard, 'transactions': updateTransactionsTable, 'catalog': updateWineList, 'analysis': updateAnalysisTable }[tabName]; if (updateFn) updateFn(); }
+function updateAll() { updateDashboard(); updateWineSelects(); updateTransactionsTable(); updateWineList(); updateAnalysisTable(); }
+function showToast(message) { const toast = document.getElementById('toast'); document.getElementById('toastMsg').textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }
+function addWineEntry() { const container = document.getElementById('wineEntries'); const newId = Date.now(); const entryDiv = document.createElement('div'); entryDiv.className = 'wine-entry'; entryDiv.innerHTML = `<div class="form-group"><label class="form-label" for="wine-select-${newId}">Vin</label><select class="form-control wine-select" id="wine-select-${newId}" required></select></div><div class="form-group"><label class="form-label" for="wine-cases-${newId}">Caisses</label><input type="number" class="form-control wine-cases" id="wine-cases-${newId}" min="0" placeholder="0"></div><div class="form-group"><label class="form-label" for="wine-bottles-${newId}">Bouteilles</label><input type="number" class="form-control wine-bottles" id="wine-bottles-${newId}" min="0" placeholder="0"><div class="stock-validator"></div></div><button type="button" class="btn btn-danger remove-btn">✕</button>`; container.appendChild(entryDiv); updateWineSelects(); entryDiv.querySelector('.remove-btn').addEventListener('click', () => entryDiv.remove()); }
+function resetTransactionForm() { document.getElementById('transactionForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('wineEntries').innerHTML = ''; addWineEntry(); }
+function getWineEmoji(type) { return { rouge: '🍷', blanc: '🥂', rose: '🌹', champagne: '🍾' }[type] || '🍇'; }
+function initRealTimeValidation() { const quickForm = document.getElementById('quickForm'); const transactionForm = document.getElementById('transactionForm'); quickForm.addEventListener('input', e => { if (['quickQtyCases', 'quickQtyBottles'].includes(e.target.id)) validateQuickForm(); }); quickForm.addEventListener('change', e => { if (['quickType', 'quickWine'].includes(e.target.id)) validateQuickForm(); }); transactionForm.addEventListener('input', e => { const entry = e.target.closest('.wine-entry'); if (entry) validateStockForRow(entry); }); transactionForm.addEventListener('change', e => { const entry = e.target.closest('.wine-entry'); if(entry) validateStockForRow(entry); if (e.target.id === 'type') document.querySelectorAll('.wine-entry').forEach(validateStockForRow); }); }
+function validateQuickForm() { const type = document.getElementById('quickType').value; const validatorEl = document.getElementById('quickStockValidator'); validatorEl.textContent = ''; validatorEl.className = 'stock-validator'; if (type !== 'sortie') return; const wineId = parseInt(document.getElementById('quickWine').value); const cases = parseInt(document.getElementById('quickQtyCases').value) || 0; const bottles = parseInt(document.getElementById('quickQtyBottles').value) || 0; if (!wineId || (cases === 0 && bottles === 0)) return; const wine = state.wines.find(w => w.id === wineId); if (!wine) return; const totalQuantityNeeded = (cases * wine.bottles_per_case) + bottles; if (totalQuantityNeeded > wine.stock) { validatorEl.textContent = `⚠️ Stock insuffisant (Reste : ${wine.stock})`; validatorEl.classList.add('invalid'); } else { validatorEl.textContent = '✅ En stock'; validatorEl.classList.add('valid'); } }
+function validateStockForRow(entryElement) { const type = document.getElementById('type').value; const validatorEl = entryElement.querySelector('.stock-validator'); validatorEl.textContent = ''; validatorEl.className = 'stock-validator'; if (type !== 'sortie') return; const wineId = parseInt(entryElement.querySelector('.wine-select').value); const cases = parseInt(entryElement.querySelector('.wine-cases').value) || 0; const bottles = parseInt(entryElement.querySelector('.wine-bottles').value) || 0; if (!wineId || (cases === 0 && bottles === 0)) return; const wine = state.wines.find(w => w.id === wineId); if (!wine) return; const totalQuantityNeeded = (cases * wine.bottles_per_case) + bottles; if (totalQuantityNeeded > wine.stock) { validatorEl.textContent = `⚠️ Stock insuffisant (Reste : ${wine.stock})`; validatorEl.classList.add('invalid'); } else { validatorEl.textContent = '✅ En stock'; validatorEl.classList.add('valid'); } }
+function updateWineSelects() { document.querySelectorAll('.wine-select').forEach(select => { const currentVal = select.value; select.innerHTML = '<option value="">Choisir un vin...</option>'; ['rouge', 'blanc', 'rose', 'champagne'].forEach(type => { const winesOfType = state.wines.filter(w => w.type === type); if (winesOfType.length > 0) { const optgroup = document.createElement('optgroup'); optgroup.label = `${getWineEmoji(type)} ${type.charAt(0).toUpperCase() + type.slice(1)}s`; winesOfType.sort((a,b) => a.name.localeCompare(b.name)).forEach(wine => { optgroup.innerHTML += `<option value="${wine.id}">${wine.name}</option>`; }); select.appendChild(optgroup); } }); select.value = currentVal; }); }
+function exportData() { let csvContent = "data:text/csv;charset=utf-8,ID Vin,Nom,Type,Stock,Bouteilles par Caisse\r\n"; state.wines.forEach(w => { csvContent += `${w.id},"${w.name}",${w.type},${w.stock},${w.bottles_per_case}\r\n`; }); const link = document.createElement("a"); link.href = encodeURI(csvContent); link.download = `inventaire_${new Date().toISOString().split('T')[0]}.csv`; link.click(); }
+function printInventory() { const printWindow = window.open('', '_blank'); printWindow.document.write(`<html><head><title>Inventaire des Vins</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%; border-collapse:collapse;} th,td{border:1px solid #ccc; padding:8px; text-align:left;}</style></head><body><h1>Inventaire au ${new Date().toLocaleDateString('fr-FR')}</h1>${document.querySelector('#detailedInventory').parentElement.outerHTML}</body></html>`); printWindow.document.close(); setTimeout(() => printWindow.print(), 500); }
+</script>
+</body>
+</html>
