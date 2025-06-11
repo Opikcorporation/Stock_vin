@@ -54,12 +54,6 @@
         th, td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
         th { font-weight: 600; font-size: 0.85rem; color: var(--text-light-color); text-transform: uppercase; letter-spacing: 0.5px; background-color: var(--background-color); }
         tbody tr:hover { background-color: #fafafa; }
-        
-        /* Alignement spécifique pour l'inventaire */
-        #detailedInventory th:nth-child(2), 
-        #detailedInventory td:nth-child(2) { text-align: center; }
-        #detailedInventory th:nth-child(3), 
-        #detailedInventory td:nth-child(3) { text-align: center; }
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px; }
         .low-stock-card { background: var(--card-background-color); padding: 20px; border-radius: var(--border-radius); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .low-stock-card .info { display: flex; flex-direction: column; }
@@ -132,7 +126,8 @@
                     <thead>
                         <tr>
                             <th>Vin</th>
-                            <th>Stock</th>
+                            <th>Stock Caisses</th>
+                            <th>Stock Bouteilles</th>
                             <th>Total Bouteilles</th>
                         </tr>
                     </thead>
@@ -315,7 +310,17 @@ async function handleAddWine(e) {
     if (!name || !type || !bottlesPerCase) { showToast('⚠️ Veuillez remplir tous les champs.'); setFormDisabled(false); return; }
     if (state.wines.some(w => w.name.toLowerCase() === name.toLowerCase())) { showToast('⚠️ Ce nom de vin existe déjà.'); setFormDisabled(false); return; }
     try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/wines`, { method: 'POST', headers: apiHeaders, body: JSON.stringify({ name, type, bottles_per_case: bottlesPerCase, stock: 0 }) });
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/wines`, { 
+            method: 'POST', 
+            headers: apiHeaders, 
+            body: JSON.stringify({ 
+                name, 
+                type, 
+                bottles_per_case: bottlesPerCase, 
+                stock_cases: 0, 
+                stock_bottles: 0 
+            }) 
+        });
         if (!response.ok) throw new Error('Échec de la création du vin.');
         const newWine = await response.json();
         state.wines.push(newWine[0]);
@@ -332,11 +337,13 @@ async function handleTransaction(e) { e.preventDefault(); await processTransacti
 // Fonctions utilitaires pour gérer la compatibilité des stocks
 function getWineStockInfo(wine) {
     // Si le vin a les nouveaux champs stock_cases et stock_bottles, les utiliser
-    if (wine.stock_cases !== undefined && wine.stock_bottles !== undefined) {
+    if (wine.stock_cases !== undefined || wine.stock_bottles !== undefined) {
+        const cases = wine.stock_cases || 0;
+        const bottles = wine.stock_bottles || 0;
         return {
-            cases: wine.stock_cases || 0,
-            bottles: wine.stock_bottles || 0,
-            total: (wine.stock_cases || 0) * wine.bottles_per_case + (wine.stock_bottles || 0)
+            cases: cases,
+            bottles: bottles,
+            total: cases * wine.bottles_per_case + bottles
         };
     }
     // Sinon, utiliser l'ancien système avec stock total
@@ -385,21 +392,31 @@ async function processTransaction(formData, formType) {
     
     const multiplier = type === 'sortie' ? -1 : 1;
     const stockUpdatePromises = winesInTx.map(txWine => {
-        // Calculer le nouveau stock total
-        const newTotalStock = txWine.currentStock.total + (txWine.quantity * multiplier);
+        // Calculer les nouveaux stocks en gardant les caisses et bouteilles séparés
+        const newCases = txWine.currentStock.cases + (txWine.transaction_cases * multiplier);
+        const newBottles = txWine.currentStock.bottles + (txWine.transaction_bottles * multiplier);
         
-        // Mettre à jour uniquement le champ stock (compatibilité avec l'ancienne structure)
+        // Mettre à jour avec les champs séparés
         return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { 
             method: 'PATCH', 
             headers: apiHeaders, 
-            body: JSON.stringify({ stock: Math.max(0, newTotalStock) }) 
+            body: JSON.stringify({ 
+                stock_cases: Math.max(0, newCases),
+                stock_bottles: Math.max(0, newBottles)
+            }) 
         });
     });
 
     try {
         const stockUpdateResponses = await Promise.all(stockUpdatePromises);
         stockUpdateResponses.forEach(res => { if (!res.ok) throw new Error('Échec mise à jour stock.'); });
-        const wines_involved = winesInTx.map(w => ({ id: w.id, name: w.name, quantity: w.quantity }));
+        const wines_involved = winesInTx.map(w => ({ 
+            id: w.id, 
+            name: w.name, 
+            cases: w.transaction_cases,
+            bottles: w.transaction_bottles,
+            quantity: w.quantity 
+        }));
         const txResponse = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, { method: 'POST', headers: apiHeaders, body: JSON.stringify({ date, type, reference, wines_involved }) });
         if (!txResponse.ok) throw new Error('Échec enregistrement transaction.');
         await loadDataFromSupabase();
@@ -434,13 +451,17 @@ async function deleteTransaction(id) {
         const wineInState = state.wines.find(w => w.id === txWine.id);
         if (!wineInState) return Promise.resolve();
         
-        const currentStock = wineInState.stock || 0;
-        const newStock = currentStock + (txWine.quantity * multiplier);
+        const stockInfo = getWineStockInfo(wineInState);
+        const newCases = stockInfo.cases + ((txWine.cases || 0) * multiplier);
+        const newBottles = stockInfo.bottles + ((txWine.bottles || 0) * multiplier);
         
         return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { 
             method: 'PATCH', 
             headers: apiHeaders, 
-            body: JSON.stringify({ stock: Math.max(0, newStock) }) 
+            body: JSON.stringify({ 
+                stock_cases: Math.max(0, newCases),
+                stock_bottles: Math.max(0, newBottles)
+            }) 
         });
     });
     try {
@@ -511,24 +532,18 @@ function updateDashboard() {
     const sortType = document.getElementById('inventorySort').value;
     
     if (state.wines.length === 0) { 
-        inventoryBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 40px;">Votre inventaire est vide.</td></tr>'; 
+        inventoryBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Votre inventaire est vide.</td></tr>'; 
     } else { 
         const sortedWines = getSortedWines(state.wines, sortType);
         inventoryBody.innerHTML = sortedWines.map(wine => { 
             const stockInfo = getWineStockInfo(wine);
             
-            let stockDisplay = '';
-            if (stockInfo.cases > 0 && stockInfo.bottles > 0) {
-                stockDisplay = `<div class="stock-display"><span class="breakdown">${stockInfo.cases} caisses + ${stockInfo.bottles} bouteilles</span></div>`;
-            } else if (stockInfo.cases > 0) {
-                stockDisplay = `<div class="stock-display"><span class="breakdown">${stockInfo.cases} caisses</span></div>`;
-            } else if (stockInfo.bottles > 0) {
-                stockDisplay = `<div class="stock-display"><span class="breakdown">${stockInfo.bottles} bouteilles</span></div>`;
-            } else {
-                stockDisplay = `<div class="stock-display"><span class="breakdown">Vide</span></div>`;
-            }
-            
-            return `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td>${stockDisplay}</td><td><strong>${stockInfo.total}</strong></td></tr>`; 
+            return `<tr>
+                <td>${getWineEmoji(wine.type)} ${wine.name}</td>
+                <td><strong>${stockInfo.cases}</strong></td>
+                <td><strong>${stockInfo.bottles}</strong></td>
+                <td><strong>${stockInfo.total}</strong></td>
+            </tr>`; 
         }).join(''); 
     }
 }
@@ -539,8 +554,17 @@ function updateTransactionsTable() {
     const filtered = state.transactions.filter(t => (t.date + t.reference + (t.wines_involved || []).map(w => w.name).join(' ')).toLowerCase().includes(search));
     if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune transaction trouvée.</td></tr>'; return; }
     tbody.innerHTML = filtered.map(t => `<tr><td>${new Date(t.date).toLocaleDateString('fr-FR')}</td><td><span class="status-badge status-${{entree:'in', sortie:'out', retour:'return'}[t.type]}">${t.type}</span></td><td>${(t.wines_involved || []).map(w => {
-        // L'ancien format stocke seulement la quantité totale
-        return `${w.name} (${w.quantity || 0}b)`;
+        let qtyDisplay = '';
+        if (w.cases && w.bottles) {
+            qtyDisplay = `${w.cases}c + ${w.bottles}b`;
+        } else if (w.cases) {
+            qtyDisplay = `${w.cases}c`;
+        } else if (w.bottles) {
+            qtyDisplay = `${w.bottles}b`;
+        } else {
+            qtyDisplay = `${w.quantity || 0}b`;
+        }
+        return `${w.name} (${qtyDisplay})`;
     }).join(', ')}</td><td>${t.reference || 'N/A'}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteTransaction(${t.id})">Supprimer</button></td></tr>`).join('');
 }
 
@@ -655,7 +679,7 @@ function validateStockForRow(entryElement) {
 }
 function updateWineSelects() { document.querySelectorAll('.wine-select').forEach(select => { const currentVal = select.value; select.innerHTML = '<option value="">Choisir un vin...</option>'; ['rouge', 'blanc', 'rose', 'champagne'].forEach(type => { const winesOfType = state.wines.filter(w => w.type === type); if (winesOfType.length > 0) { const optgroup = document.createElement('optgroup'); optgroup.label = `${getWineEmoji(type)} ${type.charAt(0).toUpperCase() + type.slice(1)}s`; winesOfType.sort((a,b) => a.name.localeCompare(b.name)).forEach(wine => { optgroup.innerHTML += `<option value="${wine.id}">${wine.name}</option>`; }); select.appendChild(optgroup); } }); select.value = currentVal; }); }
 function exportData() { 
-    let csvContent = "data:text/csv;charset=utf-8,ID Vin,Nom,Type,Caisses,Bouteilles,Total Bouteilles,Bouteilles par Caisse\r\n"; 
+    let csvContent = "data:text/csv;charset=utf-8,ID Vin,Nom,Type,Stock Caisses,Stock Bouteilles,Total Bouteilles,Bouteilles par Caisse\r\n"; 
     state.wines.forEach(w => { 
         const stockInfo = getWineStockInfo(w);
         csvContent += `${w.id},"${w.name}",${w.type},${stockInfo.cases},${stockInfo.bottles},${stockInfo.total},${w.bottles_per_case}\r\n`; 
