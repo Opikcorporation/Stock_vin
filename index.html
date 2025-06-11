@@ -47,6 +47,9 @@
         .btn-danger { background-color: var(--danger-color); color: white; }
         .btn-danger:hover:not(:disabled) { opacity: 0.85; }
         .form-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; }
+        .sort-controls { display: flex; gap: 12px; align-items: center; }
+        .sort-controls label { font-weight: 500; color: var(--text-light-color); }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
         th, td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
         th { font-weight: 600; font-size: 0.85rem; color: var(--text-light-color); text-transform: uppercase; letter-spacing: 0.5px; background-color: var(--background-color); }
@@ -81,6 +84,9 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 200%); background-color: var(--text-color); color: white; padding: 14px 22px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); font-weight: 500; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; }
         .toast.show { transform: translate(-50%, 0); }
         .footer-by-osmaweb { text-align: center; font-size: 0.8rem; color: var(--text-light-color); margin-top: 40px; padding-bottom: 20px; }
+        .stock-display { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .stock-display .total { font-weight: 600; font-size: 1.1rem; }
+        .stock-display .breakdown { font-size: 0.85rem; color: var(--text-light-color); }
     </style>
 </head>
 <body>
@@ -101,8 +107,31 @@
         <div id="dashboard" class="tab-content active">
             <div class="dashboard-grid" id="lowStockDashboard"></div>
             <div class="card">
-                <div class="card-header"><h2 class="card-title">Inventaire Détaillé</h2></div>
-                <table><thead><tr><th>Vin</th><th>Stock (Caisses)</th><th>Stock (Bouteilles)</th><th>Total Bouteilles</th></tr></thead><tbody id="detailedInventory"></tbody></table>
+                <div class="card-header">
+                    <h2 class="card-title">Inventaire Détaillé</h2>
+                </div>
+                <div class="table-controls">
+                    <div class="sort-controls">
+                        <label for="inventorySort">Trier par :</label>
+                        <select class="form-control" id="inventorySort" style="width: auto; min-width: 150px;">
+                            <option value="name">Nom (A-Z)</option>
+                            <option value="name-desc">Nom (Z-A)</option>
+                            <option value="type">Type</option>
+                            <option value="stock">Stock (croissant)</option>
+                            <option value="stock-desc">Stock (décroissant)</option>
+                        </select>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vin</th>
+                            <th>Stock</th>
+                            <th>Total Bouteilles</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailedInventory"></tbody>
+                </table>
             </div>
             <div class="card">
                 <div class="card-header"><h2 class="card-title">Transaction Rapide</h2></div>
@@ -148,13 +177,34 @@
             </div>
              <div class="card">
                 <div class="card-header"><h2 class="card-title">Vins au Catalogue</h2></div>
-                <input type="search" class="form-control" id="wineSearch" placeholder="Rechercher un vin..." style="max-width: 400px; margin-bottom: 20px;">
+                <div class="table-controls">
+                    <input type="search" class="form-control" id="wineSearch" placeholder="Rechercher un vin..." style="max-width: 400px;">
+                    <div class="sort-controls">
+                        <label for="catalogSort">Trier par :</label>
+                        <select class="form-control" id="catalogSort" style="width: auto; min-width: 150px;">
+                            <option value="name">Nom (A-Z)</option>
+                            <option value="name-desc">Nom (Z-A)</option>
+                            <option value="type">Type</option>
+                        </select>
+                    </div>
+                </div>
                 <table><thead><tr><th>Nom</th><th>Type</th><th>Bouteilles / Caisse</th><th>Action</th></tr></thead><tbody id="wineList"></tbody></table>
              </div>
         </div>
         <div id="analysis" class="tab-content">
              <div class="card">
                 <div class="card-header"><h2 class="card-title">Analyse des Consommations et Retours</h2></div>
+                <div class="table-controls">
+                    <div class="sort-controls">
+                        <label for="analysisSort">Trier par :</label>
+                        <select class="form-control" id="analysisSort" style="width: auto; min-width: 180px;">
+                            <option value="name">Nom (A-Z)</option>
+                            <option value="consumption">Consommation (décroissant)</option>
+                            <option value="returns">Retours (décroissant)</option>
+                            <option value="rate">Taux de retour (décroissant)</option>
+                        </select>
+                    </div>
+                </div>
                 <table><thead><tr><th>Vin</th><th>Total Sorties</th><th>Total Retours</th><th>Consommation Nette</th><th>Taux de Retour</th></tr></thead><tbody id="analysisTable"></tbody></table>
             </div>
         </div>
@@ -223,6 +273,12 @@ function initEventListeners() {
     document.getElementById('wineSearch').addEventListener('input', updateWineList);
     document.getElementById('threshold').addEventListener('change', e => { state.threshold = parseInt(e.target.value) || 0; updateDashboard(); });
     document.getElementById('date').valueAsDate = new Date();
+    
+    // Ajout des événements pour les nouveaux contrôles de tri
+    document.getElementById('inventorySort').addEventListener('change', updateDashboard);
+    document.getElementById('catalogSort').addEventListener('change', updateWineList);
+    document.getElementById('analysisSort').addEventListener('change', updateAnalysisTable);
+    
     initRealTimeValidation();
 }
 
@@ -244,8 +300,6 @@ async function loadDataFromSupabase() {
     }
 }
 
-// Le reste du JavaScript est identique au précédent (gestionnaires, mises à jour UI, etc.)
-// ... (Copier-coller tout le reste du script à partir d'ici)
 async function handleAddWine(e) {
     e.preventDefault();
     setFormDisabled(true);
@@ -255,10 +309,15 @@ async function handleAddWine(e) {
     if (!name || !type || !bottlesPerCase) { showToast('⚠️ Veuillez remplir tous les champs.'); setFormDisabled(false); return; }
     if (state.wines.some(w => w.name.toLowerCase() === name.toLowerCase())) { showToast('⚠️ Ce nom de vin existe déjà.'); setFormDisabled(false); return; }
     try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/wines`, { method: 'POST', headers: apiHeaders, body: JSON.stringify({ name, type, bottles_per_case: bottlesPerCase, stock: 0 }) });
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/wines`, { method: 'POST', headers: apiHeaders, body: JSON.stringify({ name, type, bottles_per_case: bottlesPerCase, stock_cases: 0, stock_bottles: 0 }) });
         if (!response.ok) throw new Error('Échec de la création du vin.');
         const newWine = await response.json();
-        state.wines.push(newWine[0]);
+        // Ajouter les propriétés calculées
+        const wineWithCalc = {
+            ...newWine[0],
+            stock: 0 // Stock total calculé
+        };
+        state.wines.push(wineWithCalc);
         e.target.reset();
         updateAll();
         showToast('🍷 Vin ajouté au catalogue');
@@ -280,18 +339,20 @@ async function processTransaction(formData, formType) {
         const wineId = parseInt(formData.get('quickWine')), cases = parseInt(formData.get('quickQtyCases')) || 0, bottles = parseInt(formData.get('quickQtyBottles')) || 0;
         const wine = state.wines.find(w => w.id === wineId);
         if (wine && (cases > 0 || bottles > 0)) {
+            const totalStock = (wine.stock_cases || 0) * wine.bottles_per_case + (wine.stock_bottles || 0);
             const quantity = (cases * wine.bottles_per_case) + bottles;
-            if (type === 'sortie' && wine.stock < quantity) stockCheckFailed = true;
-            winesInTx.push({ ...wine, quantity });
+            if (type === 'sortie' && totalStock < quantity) stockCheckFailed = true;
+            winesInTx.push({ ...wine, transaction_cases: cases, transaction_bottles: bottles, quantity });
         }
     } else {
         document.querySelectorAll('#wineEntries .wine-entry').forEach(entry => {
             const wineId = parseInt(entry.querySelector('.wine-select').value), cases = parseInt(entry.querySelector('.wine-cases').value) || 0, bottles = parseInt(entry.querySelector('.wine-bottles').value) || 0;
             const wine = state.wines.find(w => w.id === wineId);
             if(wine && (cases > 0 || bottles > 0)) {
+                const totalStock = (wine.stock_cases || 0) * wine.bottles_per_case + (wine.stock_bottles || 0);
                 const quantity = (cases * wine.bottles_per_case) + bottles;
-                if (type === 'sortie' && wine.stock < quantity) stockCheckFailed = true;
-                winesInTx.push({ ...wine, quantity });
+                if (type === 'sortie' && totalStock < quantity) stockCheckFailed = true;
+                winesInTx.push({ ...wine, transaction_cases: cases, transaction_bottles: bottles, quantity });
             }
         });
     }
@@ -302,14 +363,40 @@ async function processTransaction(formData, formType) {
     
     const multiplier = type === 'sortie' ? -1 : 1;
     const stockUpdatePromises = winesInTx.map(txWine => {
-        const newStock = txWine.stock + (txWine.quantity * multiplier);
-        return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { method: 'PATCH', headers: apiHeaders, body: JSON.stringify({ stock: newStock }) });
+        const currentCases = txWine.stock_cases || 0;
+        const currentBottles = txWine.stock_bottles || 0;
+        
+        let newCases = currentCases + (txWine.transaction_cases * multiplier);
+        let newBottles = currentBottles + (txWine.transaction_bottles * multiplier);
+        
+        // Gérer les cas où on a plus de bouteilles que nécessaire pour une caisse
+        if (newBottles >= txWine.bottles_per_case) {
+            const additionalCases = Math.floor(newBottles / txWine.bottles_per_case);
+            newCases += additionalCases;
+            newBottles = newBottles % txWine.bottles_per_case;
+        }
+        
+        // Gérer les cas où on a des bouteilles négatives (emprunter aux caisses)
+        if (newBottles < 0 && newCases > 0) {
+            const casesToBorrow = Math.ceil(Math.abs(newBottles) / txWine.bottles_per_case);
+            newCases -= casesToBorrow;
+            newBottles += casesToBorrow * txWine.bottles_per_case;
+        }
+        
+        return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { 
+            method: 'PATCH', 
+            headers: apiHeaders, 
+            body: JSON.stringify({ 
+                stock_cases: Math.max(0, newCases), 
+                stock_bottles: Math.max(0, newBottles) 
+            }) 
+        });
     });
 
     try {
         const stockUpdateResponses = await Promise.all(stockUpdatePromises);
         stockUpdateResponses.forEach(res => { if (!res.ok) throw new Error('Échec mise à jour stock.'); });
-        const wines_involved = winesInTx.map(w => ({ id: w.id, name: w.name, quantity: w.quantity }));
+        const wines_involved = winesInTx.map(w => ({ id: w.id, name: w.name, cases: w.transaction_cases, bottles: w.transaction_bottles, quantity: w.quantity }));
         const txResponse = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, { method: 'POST', headers: apiHeaders, body: JSON.stringify({ date, type, reference, wines_involved }) });
         if (!txResponse.ok) throw new Error('Échec enregistrement transaction.');
         await loadDataFromSupabase();
@@ -343,8 +430,31 @@ async function deleteTransaction(id) {
     const stockUpdatePromises = (tx.wines_involved || []).map(txWine => {
         const wineInState = state.wines.find(w => w.id === txWine.id);
         if (!wineInState) return Promise.resolve();
-        const newStock = wineInState.stock + (txWine.quantity * multiplier);
-        return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { method: 'PATCH', headers: apiHeaders, body: JSON.stringify({ stock: newStock }) });
+        
+        let newCases = (wineInState.stock_cases || 0) + ((txWine.cases || 0) * multiplier);
+        let newBottles = (wineInState.stock_bottles || 0) + ((txWine.bottles || 0) * multiplier);
+        
+        // Gérer les ajustements de stock
+        if (newBottles >= wineInState.bottles_per_case) {
+            const additionalCases = Math.floor(newBottles / wineInState.bottles_per_case);
+            newCases += additionalCases;
+            newBottles = newBottles % wineInState.bottles_per_case;
+        }
+        
+        if (newBottles < 0 && newCases > 0) {
+            const casesToBorrow = Math.ceil(Math.abs(newBottles) / wineInState.bottles_per_case);
+            newCases -= casesToBorrow;
+            newBottles += casesToBorrow * wineInState.bottles_per_case;
+        }
+        
+        return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { 
+            method: 'PATCH', 
+            headers: apiHeaders, 
+            body: JSON.stringify({ 
+                stock_cases: Math.max(0, newCases), 
+                stock_bottles: Math.max(0, newBottles) 
+            }) 
+        });
     });
     try {
         await Promise.all(stockUpdatePromises);
@@ -357,21 +467,82 @@ async function deleteTransaction(id) {
     setFormDisabled(false);
 }
 
+function getSortedWines(wines, sortType) {
+    const winesCopy = [...wines];
+    
+    switch(sortType) {
+        case 'name':
+            return winesCopy.sort((a, b) => a.name.localeCompare(b.name));
+        case 'name-desc':
+            return winesCopy.sort((a, b) => b.name.localeCompare(a.name));
+        case 'type':
+            return winesCopy.sort((a, b) => {
+                if (a.type === b.type) return a.name.localeCompare(b.name);
+                return a.type.localeCompare(b.type);
+            });
+        case 'stock':
+            return winesCopy.sort((a, b) => {
+                const stockA = (a.stock_cases || 0) * a.bottles_per_case + (a.stock_bottles || 0);
+                const stockB = (b.stock_cases || 0) * b.bottles_per_case + (b.stock_bottles || 0);
+                return stockA - stockB;
+            });
+        case 'stock-desc':
+            return winesCopy.sort((a, b) => {
+                const stockA = (a.stock_cases || 0) * a.bottles_per_case + (a.stock_bottles || 0);
+                const stockB = (b.stock_cases || 0) * b.bottles_per_case + (b.stock_bottles || 0);
+                return stockB - stockA;
+            });
+        default:
+            return winesCopy;
+    }
+}
+
 function updateDashboard() {
     const dashboardContainer = document.getElementById('lowStockDashboard');
-    if (state.wines.length === 0) { dashboardContainer.innerHTML = '<div class="alert alert-success" style="grid-column: 1 / -1;">Commencez par ajouter des vins à votre catalogue.</div>'; }
-    else {
-        const lowStockWines = [...state.wines].sort((a, b) => a.stock - b.stock).slice(0, 4);
+    if (state.wines.length === 0) { 
+        dashboardContainer.innerHTML = '<div class="alert alert-success" style="grid-column: 1 / -1;">Commencez par ajouter des vins à votre catalogue.</div>'; 
+    } else {
+        // Calculer le stock total pour chaque vin et trier par stock croissant
+        const winesWithStock = state.wines.map(wine => ({
+            ...wine,
+            totalStock: (wine.stock_cases || 0) * wine.bottles_per_case + (wine.stock_bottles || 0)
+        }));
+        
+        const lowStockWines = winesWithStock.sort((a, b) => a.totalStock - b.totalStock).slice(0, 4);
         dashboardContainer.innerHTML = lowStockWines.map(wine => {
             let stockClass = '';
-            if (wine.stock <= state.threshold) stockClass = 'critical';
-            else if (wine.stock <= state.threshold * 2) stockClass = 'warning';
-            return `<div class="low-stock-card"><div class="info"><span class="name">${wine.name}</span><span class="type-badge badge-${wine.type}">${wine.type}</span></div><div class="stock ${stockClass}">${wine.stock}</div></div>`;
+            if (wine.totalStock <= state.threshold) stockClass = 'critical';
+            else if (wine.totalStock <= state.threshold * 2) stockClass = 'warning';
+            return `<div class="low-stock-card"><div class="info"><span class="name">${wine.name}</span><span class="type-badge badge-${wine.type}">${wine.type}</span></div><div class="stock ${stockClass}">${wine.totalStock}</div></div>`;
         }).join('');
     }
+    
     const inventoryBody = document.getElementById('detailedInventory');
-    if (state.wines.length === 0) { inventoryBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Votre inventaire est vide.</td></tr>'; }
-    else { inventoryBody.innerHTML = [...state.wines].sort((a,b) => a.name.localeCompare(b.name)).map(wine => { const cases = Math.floor(wine.stock / wine.bottles_per_case); const bottles = wine.stock % wine.bottles_per_case; return `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td>${cases}</td><td>${bottles}</td><td><strong>${wine.stock}</strong></td></tr>`; }).join(''); }
+    const sortType = document.getElementById('inventorySort').value;
+    
+    if (state.wines.length === 0) { 
+        inventoryBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 40px;">Votre inventaire est vide.</td></tr>'; 
+    } else { 
+        const sortedWines = getSortedWines(state.wines, sortType);
+        inventoryBody.innerHTML = sortedWines.map(wine => { 
+            const cases = wine.stock_cases || 0;
+            const bottles = wine.stock_bottles || 0;
+            const totalStock = cases * wine.bottles_per_case + bottles;
+            
+            let stockDisplay = '';
+            if (cases > 0 && bottles > 0) {
+                stockDisplay = `${cases} caisses + ${bottles} bouteilles`;
+            } else if (cases > 0) {
+                stockDisplay = `${cases} caisses`;
+            } else if (bottles > 0) {
+                stockDisplay = `${bottles} bouteilles`;
+            } else {
+                stockDisplay = 'Vide';
+            }
+            
+            return `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td><div class="stock-display"><span class="breakdown">${stockDisplay}</span></div></td><td><strong>${totalStock}</strong></td></tr>`; 
+        }).join(''); 
+    }
 }
 
 function updateTransactionsTable() {
@@ -379,42 +550,92 @@ function updateTransactionsTable() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const filtered = state.transactions.filter(t => (t.date + t.reference + (t.wines_involved || []).map(w => w.name).join(' ')).toLowerCase().includes(search));
     if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune transaction trouvée.</td></tr>'; return; }
-    tbody.innerHTML = filtered.map(t => `<tr><td>${new Date(t.date).toLocaleDateString('fr-FR')}</td><td><span class="status-badge status-${{entree:'in', sortie:'out', retour:'return'}[t.type]}">${t.type}</span></td><td>${(t.wines_involved || []).map(w => `${w.name} (${w.quantity})`).join(', ')}</td><td>${t.reference || 'N/A'}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteTransaction(${t.id})">Supprimer</button></td></tr>`).join('');
+    tbody.innerHTML = filtered.map(t => `<tr><td>${new Date(t.date).toLocaleDateString('fr-FR')}</td><td><span class="status-badge status-${{entree:'in', sortie:'out', retour:'return'}[t.type]}">${t.type}</span></td><td>${(t.wines_involved || []).map(w => {
+        let qtyDisplay = '';
+        if (w.cases && w.bottles) {
+            qtyDisplay = `${w.cases}c + ${w.bottles}b`;
+        } else if (w.cases) {
+            qtyDisplay = `${w.cases}c`;
+        } else if (w.bottles) {
+            qtyDisplay = `${w.bottles}b`;
+        } else {
+            qtyDisplay = `${w.quantity || 0}`;
+        }
+        return `${w.name} (${qtyDisplay})`;
+    }).join(', ')}</td><td>${t.reference || 'N/A'}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteTransaction(${t.id})">Supprimer</button></td></tr>`).join('');
 }
 
 function updateWineList() {
     const tbody = document.getElementById('wineList');
     const search = document.getElementById('wineSearch').value.toLowerCase();
+    const sortType = document.getElementById('catalogSort').value;
     const filtered = state.wines.filter(w => w.name.toLowerCase().includes(search));
-    if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun vin ne correspond à votre recherche.</td></tr>'; return; }
-    tbody.innerHTML = [...filtered].sort((a,b) => a.name.localeCompare(b.name)).map(wine => `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td><span class="type-badge badge-${wine.type}">${wine.type}</span></td><td>${wine.bottles_per_case}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteWine(${wine.id})">Supprimer</button></td></tr>`).join('');
+    
+    if (filtered.length === 0) { 
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun vin ne correspond à votre recherche.</td></tr>'; 
+        return; 
+    }
+    
+    const sortedWines = getSortedWines(filtered, sortType);
+    tbody.innerHTML = sortedWines.map(wine => `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td><span class="type-badge badge-${wine.type}">${wine.type}</span></td><td>${wine.bottles_per_case}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteWine(${wine.id})">Supprimer</button></td></tr>`).join('');
 }
 
 function updateAnalysisTable() {
     const tbody = document.getElementById('analysisTable');
-    if (state.wines.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune donnée à analyser.</td></tr>'; return; }
+    const sortType = document.getElementById('analysisSort').value;
+    
+    if (state.wines.length === 0) { 
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune donnée à analyser.</td></tr>'; 
+        return; 
+    }
+    
     const analysisData = state.wines.map(wine => {
         const movements = { sortie: 0, retour: 0 };
-        state.transactions.forEach(t => { const wineInTx = (t.wines_involved || []).find(w => w.id === wine.id); if (wineInTx && movements.hasOwnProperty(t.type)) movements[t.type] += wineInTx.quantity; });
+        state.transactions.forEach(t => { 
+            const wineInTx = (t.wines_involved || []).find(w => w.id === wine.id); 
+            if (wineInTx && movements.hasOwnProperty(t.type)) movements[t.type] += wineInTx.quantity || 0; 
+        });
         const netConsumption = movements.sortie - movements.retour;
         const returnRate = movements.sortie > 0 ? ((movements.retour / movements.sortie) * 100).toFixed(1) : 0;
-        return { name: wine.name, type: wine.type, ...movements, netConsumption, returnRate };
+        return { name: wine.name, type: wine.type, ...movements, netConsumption, returnRate: parseFloat(returnRate) };
     });
+    
+    // Tri des données d'analyse
+    switch(sortType) {
+        case 'consumption':
+            analysisData.sort((a, b) => b.netConsumption - a.netConsumption);
+            break;
+        case 'returns':
+            analysisData.sort((a, b) => b.retour - a.retour);
+            break;
+        case 'rate':
+            analysisData.sort((a, b) => b.returnRate - a.returnRate);
+            break;
+        default: // 'name'
+            analysisData.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
     tbody.innerHTML = analysisData.map(data => `<tr><td>${getWineEmoji(data.type)} ${data.name}</td><td>${data.sortie}</td><td>${data.retour}</td><td><strong>${data.netConsumption}</strong></td><td>${data.returnRate} %</td></tr>`).join('');
 }
 
 function setFormDisabled(isDisabled) { document.querySelectorAll('button, input, select').forEach(el => el.disabled = isDisabled); }
 function switchTab(tabName) { document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelector(`[data-tab="${tabName}"]`).classList.add('active'); document.getElementById(tabName).classList.add('active'); const updateFn = { 'dashboard': updateDashboard, 'transactions': updateTransactionsTable, 'catalog': updateWineList, 'analysis': updateAnalysisTable }[tabName]; if (updateFn) updateFn(); }
-function updateAll() { updateDashboard(); updateWineSelects(); updateTransactionsTable(); updateWineList(); updateAnalysisTable(); }
+function updateAll() { 
+    // Recalculer le stock total pour chaque vin
+    state.wines.forEach(wine => {
+        wine.stock = (wine.stock_cases || 0) * wine.bottles_per_case + (wine.stock_bottles || 0);
+    });
+    updateDashboard(); updateWineSelects(); updateTransactionsTable(); updateWineList(); updateAnalysisTable(); 
+}
 function showToast(message) { const toast = document.getElementById('toast'); document.getElementById('toastMsg').textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }
 function addWineEntry() { const container = document.getElementById('wineEntries'); const newId = Date.now(); const entryDiv = document.createElement('div'); entryDiv.className = 'wine-entry'; entryDiv.innerHTML = `<div class="form-group"><label class="form-label" for="wine-select-${newId}">Vin</label><select class="form-control wine-select" id="wine-select-${newId}" required></select></div><div class="form-group"><label class="form-label" for="wine-cases-${newId}">Caisses</label><input type="number" class="form-control wine-cases" id="wine-cases-${newId}" min="0" placeholder="0"></div><div class="form-group"><label class="form-label" for="wine-bottles-${newId}">Bouteilles</label><input type="number" class="form-control wine-bottles" id="wine-bottles-${newId}" min="0" placeholder="0"><div class="stock-validator"></div></div><button type="button" class="btn btn-danger remove-btn">✕</button>`; container.appendChild(entryDiv); updateWineSelects(); entryDiv.querySelector('.remove-btn').addEventListener('click', () => entryDiv.remove()); }
 function resetTransactionForm() { document.getElementById('transactionForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('wineEntries').innerHTML = ''; addWineEntry(); }
 function getWineEmoji(type) { return { rouge: '🍷', blanc: '🥂', rose: '🌹', champagne: '🍾' }[type] || '🍇'; }
 function initRealTimeValidation() { const quickForm = document.getElementById('quickForm'); const transactionForm = document.getElementById('transactionForm'); quickForm.addEventListener('input', e => { if (['quickQtyCases', 'quickQtyBottles'].includes(e.target.id)) validateQuickForm(); }); quickForm.addEventListener('change', e => { if (['quickType', 'quickWine'].includes(e.target.id)) validateQuickForm(); }); transactionForm.addEventListener('input', e => { const entry = e.target.closest('.wine-entry'); if (entry) validateStockForRow(entry); }); transactionForm.addEventListener('change', e => { const entry = e.target.closest('.wine-entry'); if(entry) validateStockForRow(entry); if (e.target.id === 'type') document.querySelectorAll('.wine-entry').forEach(validateStockForRow); }); }
-function validateQuickForm() { const type = document.getElementById('quickType').value; const validatorEl = document.getElementById('quickStockValidator'); validatorEl.textContent = ''; validatorEl.className = 'stock-validator'; if (type !== 'sortie') return; const wineId = parseInt(document.getElementById('quickWine').value); const cases = parseInt(document.getElementById('quickQtyCases').value) || 0; const bottles = parseInt(document.getElementById('quickQtyBottles').value) || 0; if (!wineId || (cases === 0 && bottles === 0)) return; const wine = state.wines.find(w => w.id === wineId); if (!wine) return; const totalQuantityNeeded = (cases * wine.bottles_per_case) + bottles; if (totalQuantityNeeded > wine.stock) { validatorEl.textContent = `⚠️ Stock insuffisant (Reste : ${wine.stock})`; validatorEl.classList.add('invalid'); } else { validatorEl.textContent = '✅ En stock'; validatorEl.classList.add('valid'); } }
-function validateStockForRow(entryElement) { const type = document.getElementById('type').value; const validatorEl = entryElement.querySelector('.stock-validator'); validatorEl.textContent = ''; validatorEl.className = 'stock-validator'; if (type !== 'sortie') return; const wineId = parseInt(entryElement.querySelector('.wine-select').value); const cases = parseInt(entryElement.querySelector('.wine-cases').value) || 0; const bottles = parseInt(entryElement.querySelector('.wine-bottles').value) || 0; if (!wineId || (cases === 0 && bottles === 0)) return; const wine = state.wines.find(w => w.id === wineId); if (!wine) return; const totalQuantityNeeded = (cases * wine.bottles_per_case) + bottles; if (totalQuantityNeeded > wine.stock) { validatorEl.textContent = `⚠️ Stock insuffisant (Reste : ${wine.stock})`; validatorEl.classList.add('invalid'); } else { validatorEl.textContent = '✅ En stock'; validatorEl.classList.add('valid'); } }
+function validateQuickForm() { const type = document.getElementById('quickType').value; const validatorEl = document.getElementById('quickStockValidator'); validatorEl.textContent = ''; validatorEl.className = 'stock-validator'; if (type !== 'sortie') return; const wineId = parseInt(document.getElementById('quickWine').value); const cases = parseInt(document.getElementById('quickQtyCases').value) || 0; const bottles = parseInt(document.getElementById('quickQtyBottles').value) || 0; if (!wineId || (cases === 0 && bottles === 0)) return; const wine = state.wines.find(w => w.id === wineId); if (!wine) return; const totalStock = (wine.stock_cases || 0) * wine.bottles_per_case + (wine.stock_bottles || 0); const totalQuantityNeeded = (cases * wine.bottles_per_case) + bottles; if (totalQuantityNeeded > totalStock) { validatorEl.textContent = `⚠️ Stock insuffisant (Reste : ${totalStock})`; validatorEl.classList.add('invalid'); } else { validatorEl.textContent = '✅ En stock'; validatorEl.classList.add('valid'); } }
+function validateStockForRow(entryElement) { const type = document.getElementById('type').value; const validatorEl = entryElement.querySelector('.stock-validator'); validatorEl.textContent = ''; validatorEl.className = 'stock-validator'; if (type !== 'sortie') return; const wineId = parseInt(entryElement.querySelector('.wine-select').value); const cases = parseInt(entryElement.querySelector('.wine-cases').value) || 0; const bottles = parseInt(entryElement.querySelector('.wine-bottles').value) || 0; if (!wineId || (cases === 0 && bottles === 0)) return; const wine = state.wines.find(w => w.id === wineId); if (!wine) return; const totalStock = (wine.stock_cases || 0) * wine.bottles_per_case + (wine.stock_bottles || 0); const totalQuantityNeeded = (cases * wine.bottles_per_case) + bottles; if (totalQuantityNeeded > totalStock) { validatorEl.textContent = `⚠️ Stock insuffisant (Reste : ${totalStock})`; validatorEl.classList.add('invalid'); } else { validatorEl.textContent = '✅ En stock'; validatorEl.classList.add('valid'); } }
 function updateWineSelects() { document.querySelectorAll('.wine-select').forEach(select => { const currentVal = select.value; select.innerHTML = '<option value="">Choisir un vin...</option>'; ['rouge', 'blanc', 'rose', 'champagne'].forEach(type => { const winesOfType = state.wines.filter(w => w.type === type); if (winesOfType.length > 0) { const optgroup = document.createElement('optgroup'); optgroup.label = `${getWineEmoji(type)} ${type.charAt(0).toUpperCase() + type.slice(1)}s`; winesOfType.sort((a,b) => a.name.localeCompare(b.name)).forEach(wine => { optgroup.innerHTML += `<option value="${wine.id}">${wine.name}</option>`; }); select.appendChild(optgroup); } }); select.value = currentVal; }); }
-function exportData() { let csvContent = "data:text/csv;charset=utf-8,ID Vin,Nom,Type,Stock,Bouteilles par Caisse\r\n"; state.wines.forEach(w => { csvContent += `${w.id},"${w.name}",${w.type},${w.stock},${w.bottles_per_case}\r\n`; }); const link = document.createElement("a"); link.href = encodeURI(csvContent); link.download = `inventaire_${new Date().toISOString().split('T')[0]}.csv`; link.click(); }
+function exportData() { let csvContent = "data:text/csv;charset=utf-8,ID Vin,Nom,Type,Caisses,Bouteilles,Total Bouteilles,Bouteilles par Caisse\r\n"; state.wines.forEach(w => { const cases = w.stock_cases || 0; const bottles = w.stock_bottles || 0; const total = cases * w.bottles_per_case + bottles; csvContent += `${w.id},"${w.name}",${w.type},${cases},${bottles},${total},${w.bottles_per_case}\r\n`; }); const link = document.createElement("a"); link.href = encodeURI(csvContent); link.download = `inventaire_${new Date().toISOString().split('T')[0]}.csv`; link.click(); }
 function printInventory() { const printWindow = window.open('', '_blank'); printWindow.document.write(`<html><head><title>Inventaire des Vins</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%; border-collapse:collapse;} th,td{border:1px solid #ccc; padding:8px; text-align:left;}</style></head><body><h1>Inventaire au ${new Date().toLocaleDateString('fr-FR')}</h1>${document.querySelector('#detailedInventory').parentElement.outerHTML}</body></html>`); printWindow.document.close(); setTimeout(() => printWindow.print(), 500); }
 </script>
 </body>
