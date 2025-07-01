@@ -10,7 +10,7 @@
             --primary-light-color: #e6f2ff;
             --success-color: #28a745;
             --danger-color: #dc3545;
-            --warning-color: #ffc107; /* Orange for low stock warning */
+            --warning-color: #ffc107;
             --text-color: #1d1d1f;
             --text-light-color: #6e6e73;
             --background-color: #f5f5f7;
@@ -25,8 +25,8 @@
         .header { text-align: center; margin-bottom: 32px; }
         .header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 4px; }
         .header h2 { font-size: 1.25rem; font-weight: 400; color: var(--text-light-color); }
-        .nav-tabs { display: flex; gap: 8px; margin-bottom: 32px; border-bottom: 1px solid var(--border-color); }
-        .nav-tab { padding: 12px 18px; background: none; border: none; font-size: 1rem; font-weight: 500; color: var(--text-light-color); cursor: pointer; transition: all 0.2s ease-in-out; border-bottom: 3px solid transparent; position: relative; top: 1px; }
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 32px; border-bottom: 1px solid var(--border-color); overflow-x: auto; }
+        .nav-tab { padding: 12px 18px; background: none; border: none; font-size: 1rem; font-weight: 500; color: var(--text-light-color); cursor: pointer; transition: all 0.2s ease-in-out; border-bottom: 3px solid transparent; position: relative; top: 1px; white-space: nowrap; }
         .nav-tab:hover { color: var(--text-color); }
         .nav-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
         .tab-content { display: none; }
@@ -38,7 +38,7 @@
         .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
         .form-control { width: 100%; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; background-color: #fdfdfd; }
         .form-control:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-light-color); }
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
         .btn:disabled { background-color: #e9e9eb; color: #aaa; cursor: not-allowed; }
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover:not(:disabled) { opacity: 0.85; }
@@ -46,9 +46,10 @@
         .btn-secondary:hover:not(:disabled) { background-color: #dcdce0; }
         .btn-danger { background-color: var(--danger-color); color: white; }
         .btn-danger:hover:not(:disabled) { opacity: 0.85; }
-        .form-actions { display: flex; gap: 12px; margin-top: 24px; }
-        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; }
-        .sort-controls { display: flex; gap: 12px; align-items: center; }
+        .btn-small { padding: 6px 12px; font-size: 0.8rem; }
+        .form-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+        .sort-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .sort-controls label { font-weight: 500; color: var(--text-light-color); }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
         th, td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
@@ -88,166 +89,63 @@
         .stock-display .total { font-weight: 600; font-size: 1.1rem; }
         .stock-display .breakdown { font-size: 0.85rem; color: var(--text-light-color); }
 
-        /* ===================================================================================
-           RESPONSIVE DESIGN FOR MOBILE
-           =================================================================================== */
-        @media screen and (max-width: 768px) {
-            .container {
-                padding: 16px; /* Less padding on smaller screens */
-            }
+        /* Modal styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: white; margin: 5% auto; padding: 20px; border-radius: var(--border-radius); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 1.5rem; font-weight: 600; }
+        .close { font-size: 28px; font-weight: bold; cursor: pointer; color: #aaa; }
+        .close:hover { color: #000; }
 
-            .header h1 {
-                font-size: 2rem; /* Slightly smaller header on mobile */
-            }
-
-            .header h2 {
-                font-size: 1rem;
-            }
-
-            .nav-tabs {
-                flex-wrap: wrap; /* Allow tabs to wrap to next line */
-                justify-content: center; /* Center tabs */
-                gap: 4px; /* Smaller gap between tabs */
-                margin-bottom: 24px;
-            }
-
-            .nav-tab {
-                padding: 10px 14px; /* Smaller padding for tabs */
-                font-size: 0.9rem;
-            }
-
-            .card {
-                padding: 20px; /* Smaller card padding */
-            }
-
-            .card-header {
-                margin-bottom: 16px;
-                padding-bottom: 12px;
-            }
-
-            .card-title {
-                font-size: 1.3rem; /* Smaller card title */
-            }
-
-            .form-actions {
-                flex-direction: column; /* Stack buttons vertically */
-                gap: 10px; /* Smaller gap for stacked buttons */
-            }
-
-            .btn {
-                width: 100%; /* Full width buttons */
-                justify-content: center; /* Center content in buttons */
-            }
-
-            .table-controls {
-                flex-direction: column; /* Stack table controls */
-                align-items: flex-start; /* Align controls to start */
-                gap: 12px;
-                margin-bottom: 16px;
-            }
-
-            .sort-controls {
-                width: 100%; /* Make sort controls full width */
-                justify-content: space-between; /* Space out label and select */
-            }
-
-            .sort-controls select {
-                width: calc(100% - 80px); /* Adjust select width to fit */
-                min-width: unset !important; /* Override min-width */
-            }
-
-            table {
-                font-size: 0.85rem; /* Smaller font size for tables */
-                display: block; /* Allow table to scroll horizontally */
-                overflow-x: auto; /* Enable horizontal scrolling */
-                white-space: nowrap; /* Prevent text wrapping in table cells */
-            }
-
-            th, td {
-                padding: 12px; /* Smaller padding in table cells */
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr; /* Single column for dashboard cards */
-                gap: 16px; /* Smaller gap for dashboard cards */
-            }
-
-            .low-stock-card .stock {
-                font-size: 2rem; /* Slightly smaller stock number */
-            }
-
-            .wine-entry {
-                grid-template-columns: 1fr; /* Stack wine entry fields vertically */
-                gap: 10px; /* Smaller gap for wine entry fields */
-                padding: 12px;
-            }
-
-            .wine-entry .form-group {
-                margin-bottom: 0; /* Remove margin between stacked form groups */
-            }
-
-            .remove-btn {
-                margin-top: 0; /* Align remove button when stacked */
-                width: 100%;
-            }
-
-            /* Adjust quick transaction form layout */
-            #quickForm > div {
-                grid-template-columns: 1fr !important; /* Single column for quick form */
-                gap: 10px;
-            }
-
-            /* Adjust add wine form layout */
-            #addWineForm {
-                grid-template-columns: 1fr !important; /* Single column for add wine form */
-                gap: 10px;
-                align-items: stretch; /* Stretch items to fill width */
-            }
-            #addWineForm .form-group {
-                margin-bottom: 0;
-            }
-            #addWineForm .btn {
-                 height: auto; /* Allow button to adjust height */
-            }
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header h1 { font-size: 2rem; }
+            .header h2 { font-size: 1rem; }
+            .card { padding: 16px 20px; }
+            .nav-tabs { gap: 4px; padding-bottom: 0; }
+            .nav-tab { padding: 10px 12px; font-size: 0.9rem; }
+            
+            /* Dashboard Grid - Mobile */
+            .dashboard-grid { grid-template-columns: 1fr; gap: 16px; }
+            .low-stock-card { padding: 16px; }
+            .low-stock-card .stock { font-size: 2rem; }
+            
+            /* Form layouts - Mobile */
+            .wine-entry { grid-template-columns: 1fr; gap: 12px; }
+            .remove-btn { margin-top: 0; height: auto; padding: 8px 16px; width: 100%; }
+            
+            .form-actions { flex-direction: column; }
+            .form-actions .btn { width: 100%; }
+            
+            .table-controls { flex-direction: column; align-items: stretch; gap: 12px; }
+            .sort-controls { justify-content: space-between; }
+            
+            /* Tables - Mobile Card Layout */
+            .mobile-table { display: none; }
+            table { display: none; }
+            .mobile-cards { display: block; }
+            .mobile-card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border-color); }
+            .mobile-card-header { font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; }
+            .mobile-card-content { display: flex; flex-direction: column; gap: 4px; }
+            .mobile-card-row { display: flex; justify-content: space-between; font-size: 0.9rem; }
+            .mobile-card-row .label { color: var(--text-light-color); }
+            .mobile-card-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+            .mobile-card-actions .btn { flex: 1; min-width: auto; }
         }
 
-        @media screen and (max-width: 480px) {
-            .header h1 {
-                font-size: 1.8rem;
-            }
-            .header h2 {
-                font-size: 0.9rem;
-            }
-            .nav-tab {
-                font-size: 0.85rem;
-                padding: 8px 10px;
-            }
-            .card {
-                padding: 15px;
-            }
-            .card-title {
-                font-size: 1.2rem;
-            }
-            .btn {
-                font-size: 0.9rem;
-                padding: 10px 20px;
-            }
-            .form-control {
-                padding: 10px 14px;
-                font-size: 0.9rem;
-            }
-            th, td {
-                padding: 10px;
-                font-size: 0.8rem;
-            }
-            .low-stock-card .stock {
-                font-size: 1.8rem;
-            }
-            .toast {
-                padding: 10px 15px;
-                font-size: 0.9rem;
-                bottom: 10px; /* Closer to bottom on very small screens */
-            }
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.5rem; }
+            .card { padding: 12px 16px; }
+            .nav-tab { padding: 8px 10px; font-size: 0.8rem; }
+            .low-stock-card .stock { font-size: 1.5rem; }
+            .modal-content { margin: 2% auto; width: 95%; }
+        }
+
+        /* Desktop table visibility */
+        @media (min-width: 769px) {
+            .mobile-cards { display: none; }
+            table { display: table; }
         }
     </style>
 </head>
@@ -295,6 +193,7 @@
                     </thead>
                     <tbody id="detailedInventory"></tbody>
                 </table>
+                <div class="mobile-cards" id="detailedInventoryMobile"></div>
             </div>
             <div class="card">
                 <div class="card-header"><h2 class="card-title">Transaction Rapide</h2></div>
@@ -309,6 +208,7 @@
                 </form>
             </div>
         </div>
+
         <div id="transactions" class="tab-content">
             <div class="card">
                 <div class="card-header"><h2 class="card-title">Nouvelle Transaction</h2></div>
@@ -326,8 +226,10 @@
                 <div class="card-header"><h2 class="card-title">Historique des Transactions</h2></div>
                 <input type="search" class="form-control" id="searchInput" placeholder="Rechercher une transaction..." style="max-width: 400px; margin-bottom: 20px;">
                 <table><thead><tr><th>Date</th><th>Type</th><th>Vins (Qté Bouteilles)</th><th>Référence</th><th>Actions</th></tr></thead><tbody id="transactionsTable"></tbody></table>
+                <div class="mobile-cards" id="transactionsTableMobile"></div>
             </div>
         </div>
+
         <div id="catalog" class="tab-content">
             <div class="card">
                 <div class="card-header"><h2 class="card-title">Ajouter un Vin au Catalogue</h2></div>
@@ -352,8 +254,10 @@
                     </div>
                 </div>
                 <table><thead><tr><th>Nom</th><th>Type</th><th>Bouteilles / Caisse</th><th>Action</th></tr></thead><tbody id="wineList"></tbody></table>
+                <div class="mobile-cards" id="wineListMobile"></div>
              </div>
         </div>
+
         <div id="analysis" class="tab-content">
              <div class="card">
                 <div class="card-header"><h2 class="card-title">Analyse des Consommations et Retours</h2></div>
@@ -369,8 +273,10 @@
                     </div>
                 </div>
                 <table><thead><tr><th>Vin</th><th>Total Sorties</th><th>Total Retours</th><th>Consommation Nette</th><th>Taux de Retour</th></tr></thead><tbody id="analysisTable"></tbody></table>
+                <div class="mobile-cards" id="analysisTableMobile"></div>
             </div>
         </div>
+
         <div id="settings" class="tab-content">
             <div class="card">
                 <div class="card-header"><h2 class="card-title">Paramètres Généraux</h2></div>
@@ -379,6 +285,31 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal pour modifier une transaction -->
+    <div id="editTransactionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Modifier la Transaction</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTransactionId">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div class="form-group"><label class="form-label" for="editDate">Date</label><input type="date" class="form-control" id="editDate" name="editDate" required></div>
+                    <div class="form-group"><label class="form-label" for="editType">Type</label><select class="form-control" id="editType" name="editType" required><option value="entree">📥 Entrée</option><option value="sortie">📤 Sortie</option><option value="retour">↩️ Retour</option></select></div>
+                    <div class="form-group"><label class="form-label" for="editReference">Référence</label><input type="text" class="form-control" id="editReference" name="editReference" placeholder="Ex: Mariage Dupont"></div>
+                </div>
+                <div class="wine-entries" id="editWineEntries"></div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="editAddWineBtn">+ Ajouter un vin</button>
+                    <button type="submit" class="btn btn-primary">Sauvegarder les Modifications</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="toast" class="toast"><span id="toastMsg"></span></div>
     <div class="footer-by-osmaweb">Conçu et développé par Osmaweb.</div>
 
@@ -387,7 +318,7 @@
 // CONFIGURATION SUPABASE
 // ===================================================================================
 const SUPABASE_URL = "https://jvthgikhwaxiqxsjmacl.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dGhnaWtod2F4aXF4c2ptYWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzNDg4MjMsImexCI6MjA2NDkyNDgyM30.f5ixqtktLbDRPT2IyJodmMBbYD2ZK7TRfCNszz2nM48";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dGhnaWtod2F4aXF4c2ptYWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzNDg4MjMsImV4cCI6MjA2NDkyNDgyM30.f5ixqtktLbDRPT2IyJodmMBbYD2ZK7TRfCNszz2nM48";
 
 const apiHeaders = {
     'apikey': SUPABASE_KEY,
@@ -402,7 +333,8 @@ const apiHeaders = {
 let state = {
     wines: [],
     transactions: [],
-    threshold: 12
+    threshold: 12,
+    editingTransaction: null
 };
 
 // ===================================================================================
@@ -413,15 +345,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initApp() {
-    // 1. On active l'interface tout de suite pour que les boutons répondent
     initEventListeners();
     addWineEntry();
     showToast('Connexion à la base de données...');
 
-    // 2. On charge les données en arrière-plan
     await loadDataFromSupabase();
-
-    // 3. On met à jour toute l'interface avec les données chargées
     updateAll();
     showToast('Application prête !');
 }
@@ -430,17 +358,26 @@ function initEventListeners() {
     document.querySelectorAll('.nav-tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
     document.getElementById('quickForm').addEventListener('submit', handleQuickTransaction);
     document.getElementById('transactionForm').addEventListener('submit', handleTransaction);
+    document.getElementById('editTransactionForm').addEventListener('submit', handleEditTransaction);
     document.getElementById('addWineForm').addEventListener('submit', handleAddWine);
     document.getElementById('addWineBtn').addEventListener('click', () => addWineEntry());
+    document.getElementById('editAddWineBtn').addEventListener('click', () => addWineEntry('editWineEntries'));
     document.getElementById('searchInput').addEventListener('input', updateTransactionsTable);
     document.getElementById('wineSearch').addEventListener('input', updateWineList);
     document.getElementById('threshold').addEventListener('change', e => { state.threshold = parseInt(e.target.value) || 0; updateDashboard(); });
     document.getElementById('date').valueAsDate = new Date();
     
-    // Ajout des événements pour les nouveaux contrôles de tri
     document.getElementById('inventorySort').addEventListener('change', updateDashboard);
     document.getElementById('catalogSort').addEventListener('change', updateWineList);
     document.getElementById('analysisSort').addEventListener('change', updateAnalysisTable);
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('editTransactionModal');
+        if (e.target === modal) {
+            closeEditModal();
+        }
+    });
     
     initRealTimeValidation();
 }
@@ -498,7 +435,6 @@ async function handleTransaction(e) { e.preventDefault(); await processTransacti
 
 // Fonctions utilitaires pour gérer la compatibilité des stocks
 function getWineStockInfo(wine) {
-    // Si le vin a les nouveaux champs stock_cases et stock_bottles, les utiliser
     if (wine.stock_cases !== undefined || wine.stock_bottles !== undefined) {
         const cases = wine.stock_cases || 0;
         const bottles = wine.stock_bottles || 0;
@@ -508,7 +444,6 @@ function getWineStockInfo(wine) {
             total: cases * wine.bottles_per_case + bottles
         };
     }
-    // Sinon, utiliser l'ancien système avec stock total
     const totalStock = wine.stock || 0;
     const cases = Math.floor(totalStock / wine.bottles_per_case);
     const bottles = totalStock % wine.bottles_per_case;
@@ -554,11 +489,9 @@ async function processTransaction(formData, formType) {
     
     const multiplier = type === 'sortie' ? -1 : 1;
     const stockUpdatePromises = winesInTx.map(txWine => {
-        // Calculer les nouveaux stocks en gardant les caisses et bouteilles séparés
         const newCases = txWine.currentStock.cases + (txWine.transaction_cases * multiplier);
         const newBottles = txWine.currentStock.bottles + (txWine.transaction_bottles * multiplier);
         
-        // Mettre à jour avec les champs séparés
         return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, { 
             method: 'PATCH', 
             headers: apiHeaders, 
@@ -586,6 +519,209 @@ async function processTransaction(formData, formType) {
         updateAll();
         showToast('✅ Transaction enregistrée.');
     } catch (error) { showToast("Erreur lors de la transaction."); console.error(error); }
+    setFormDisabled(false);
+}
+
+// ===================================================================================
+// GESTION DE LA MODIFICATION DES TRANSACTIONS
+// ===================================================================================
+function openEditModal(transactionId) {
+    const transaction = state.transactions.find(t => t.id === transactionId);
+    if (!transaction) return;
+    
+    state.editingTransaction = transaction;
+    
+    // Remplir les champs de base
+    document.getElementById('editTransactionId').value = transaction.id;
+    document.getElementById('editDate').value = transaction.date;
+    document.getElementById('editType').value = transaction.type;
+    document.getElementById('editReference').value = transaction.reference || '';
+    
+    // Vider les entrées de vins existantes
+    document.getElementById('editWineEntries').innerHTML = '';
+    
+    // Ajouter les vins de la transaction
+    (transaction.wines_involved || []).forEach(wine => {
+        addWineEntry('editWineEntries');
+        const entries = document.querySelectorAll('#editWineEntries .wine-entry');
+        const lastEntry = entries[entries.length - 1];
+        
+        lastEntry.querySelector('.wine-select').value = wine.id;
+        lastEntry.querySelector('.wine-cases').value = wine.cases || 0;
+        lastEntry.querySelector('.wine-bottles').value = wine.bottles || 0;
+    });
+    
+    // Si aucun vin, ajouter une entrée vide
+    if ((transaction.wines_involved || []).length === 0) {
+        addWineEntry('editWineEntries');
+    }
+    
+    updateWineSelects();
+    document.getElementById('editTransactionModal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('editTransactionModal').style.display = 'none';
+    state.editingTransaction = null;
+}
+
+async function handleEditTransaction(e) {
+    e.preventDefault();
+    if (!state.editingTransaction) return;
+    
+    setFormDisabled(true);
+    
+    const formData = new FormData(e.target);
+    const transactionId = parseInt(document.getElementById('editTransactionId').value);
+    const newType = formData.get('editType');
+    const newReference = formData.get('editReference') || '';
+    const newDate = formData.get('editDate');
+    
+    // Collecter les nouveaux vins
+    let newWinesInTx = [];
+    document.querySelectorAll('#editWineEntries .wine-entry').forEach(entry => {
+        const wineId = parseInt(entry.querySelector('.wine-select').value);
+        const cases = parseInt(entry.querySelector('.wine-cases').value) || 0;
+        const bottles = parseInt(entry.querySelector('.wine-bottles').value) || 0;
+        const wine = state.wines.find(w => w.id === wineId);
+        
+        if (wine && (cases > 0 || bottles > 0)) {
+            const quantity = (cases * wine.bottles_per_case) + bottles;
+            newWinesInTx.push({
+                ...wine,
+                transaction_cases: cases,
+                transaction_bottles: bottles,
+                quantity
+            });
+        }
+    });
+    
+    if (newWinesInTx.length === 0) {
+        showToast('⚠️ Veuillez ajouter au moins un vin.');
+        setFormDisabled(false);
+        return;
+    }
+    
+    try {
+        // Étape 1: Restaurer l'ancien stock
+        const oldTransaction = state.editingTransaction;
+        const oldMultiplier = oldTransaction.type === 'sortie' ? 1 : -1;
+        
+        const restoreStockPromises = (oldTransaction.wines_involved || []).map(oldWine => {
+            const wineInState = state.wines.find(w => w.id === oldWine.id);
+            if (!wineInState) return Promise.resolve();
+            
+            const stockInfo = getWineStockInfo(wineInState);
+            const restoredCases = stockInfo.cases + ((oldWine.cases || 0) * oldMultiplier);
+            const restoredBottles = stockInfo.bottles + ((oldWine.bottles || 0) * oldMultiplier);
+            
+            return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${oldWine.id}`, {
+                method: 'PATCH',
+                headers: apiHeaders,
+                body: JSON.stringify({
+                    stock_cases: Math.max(0, restoredCases),
+                    stock_bottles: Math.max(0, restoredBottles)
+                })
+            });
+        });
+        
+        await Promise.all(restoreStockPromises);
+        
+        // Recharger les données pour avoir les stocks restaurés
+        await loadDataFromSupabase();
+        
+        // Étape 2: Vérifier la disponibilité du stock pour la nouvelle transaction
+        let stockCheckFailed = false;
+        if (newType === 'sortie') {
+            for (const txWine of newWinesInTx) {
+                const wine = state.wines.find(w => w.id === txWine.id);
+                const stockInfo = getWineStockInfo(wine);
+                if (stockInfo.total < txWine.quantity) {
+                    stockCheckFailed = true;
+                    break;
+                }
+            }
+        }
+        
+        if (stockCheckFailed) {
+            // Restaurer l'ancienne transaction si le stock est insuffisant
+            const revertMultiplier = oldTransaction.type === 'sortie' ? -1 : 1;
+            const revertPromises = (oldTransaction.wines_involved || []).map(oldWine => {
+                const wineInState = state.wines.find(w => w.id === oldWine.id);
+                if (!wineInState) return Promise.resolve();
+                
+                const stockInfo = getWineStockInfo(wineInState);
+                const revertedCases = stockInfo.cases + ((oldWine.cases || 0) * revertMultiplier);
+                const revertedBottles = stockInfo.bottles + ((oldWine.bottles || 0) * revertMultiplier);
+                
+                return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${oldWine.id}`, {
+                    method: 'PATCH',
+                    headers: apiHeaders,
+                    body: JSON.stringify({
+                        stock_cases: Math.max(0, revertedCases),
+                        stock_bottles: Math.max(0, revertedBottles)
+                    })
+                });
+            });
+            
+            await Promise.all(revertPromises);
+            showToast('⚠️ Stock insuffisant pour la modification.');
+            setFormDisabled(false);
+            return;
+        }
+        
+        // Étape 3: Appliquer le nouveau stock
+        const newMultiplier = newType === 'sortie' ? -1 : 1;
+        const applyStockPromises = newWinesInTx.map(txWine => {
+            const wine = state.wines.find(w => w.id === txWine.id);
+            const stockInfo = getWineStockInfo(wine);
+            const newCases = stockInfo.cases + (txWine.transaction_cases * newMultiplier);
+            const newBottles = stockInfo.bottles + (txWine.transaction_bottles * newMultiplier);
+            
+            return fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${txWine.id}`, {
+                method: 'PATCH',
+                headers: apiHeaders,
+                body: JSON.stringify({
+                    stock_cases: Math.max(0, newCases),
+                    stock_bottles: Math.max(0, newBottles)
+                })
+            });
+        });
+        
+        await Promise.all(applyStockPromises);
+        
+        // Étape 4: Mettre à jour la transaction
+        const wines_involved = newWinesInTx.map(w => ({
+            id: w.id,
+            name: w.name,
+            cases: w.transaction_cases,
+            bottles: w.transaction_bottles,
+            quantity: w.quantity
+        }));
+        
+        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${transactionId}`, {
+            method: 'PATCH',
+            headers: apiHeaders,
+            body: JSON.stringify({
+                date: newDate,
+                type: newType,
+                reference: newReference,
+                wines_involved
+            })
+        });
+        
+        if (!updateResponse.ok) throw new Error('Échec de la mise à jour de la transaction.');
+        
+        await loadDataFromSupabase();
+        updateAll();
+        closeEditModal();
+        showToast('✅ Transaction modifiée avec succès.');
+        
+    } catch (error) {
+        console.error('Erreur lors de la modification:', error);
+        showToast('Erreur lors de la modification de la transaction.');
+    }
+    
     setFormDisabled(false);
 }
 
@@ -672,7 +808,6 @@ function updateDashboard() {
     if (state.wines.length === 0) { 
         dashboardContainer.innerHTML = '<div class="alert alert-success" style="grid-column: 1 / -1;">Commencez par ajouter des vins à votre catalogue.</div>'; 
     } else {
-        // Calculer le stock total pour chaque vin et trier par stock croissant
         const winesWithStock = state.wines.map(wine => {
             const stockInfo = getWineStockInfo(wine);
             return {
@@ -690,6 +825,7 @@ function updateDashboard() {
         }).join('');
     }
     
+    // Update desktop table
     const inventoryBody = document.getElementById('detailedInventory');
     const sortType = document.getElementById('inventorySort').value;
     
@@ -708,13 +844,54 @@ function updateDashboard() {
             </tr>`; 
         }).join(''); 
     }
+    
+    // Update mobile cards
+    const inventoryMobile = document.getElementById('detailedInventoryMobile');
+    if (state.wines.length === 0) {
+        inventoryMobile.innerHTML = '<div class="alert alert-success">Votre inventaire est vide.</div>';
+    } else {
+        const sortedWines = getSortedWines(state.wines, sortType);
+        inventoryMobile.innerHTML = sortedWines.map(wine => {
+            const stockInfo = getWineStockInfo(wine);
+            return `
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <span><strong>${getWineEmoji(wine.type)} ${wine.name}</strong></span>
+                        <span class="type-badge badge-${wine.type}">${wine.type}</span>
+                    </div>
+                    <div class="mobile-card-content">
+                        <div class="mobile-card-row">
+                            <span class="label">Stock Caisses:</span>
+                            <span><strong>${stockInfo.cases}</strong></span>
+                        </div>
+                        <div class="mobile-card-row">
+                            <span class="label">Stock Bouteilles:</span>
+                            <span><strong>${stockInfo.bottles}</strong></span>
+                        </div>
+                        <div class="mobile-card-row">
+                            <span class="label">Total Bouteilles:</span>
+                            <span><strong>${stockInfo.total}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
 function updateTransactionsTable() {
     const tbody = document.getElementById('transactionsTable');
+    const mobileContainer = document.getElementById('transactionsTableMobile');
     const search = document.getElementById('searchInput').value.toLowerCase();
     const filtered = state.transactions.filter(t => (t.date + t.reference + (t.wines_involved || []).map(w => w.name).join(' ')).toLowerCase().includes(search));
-    if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune transaction trouvée.</td></tr>'; return; }
+    
+    if (filtered.length === 0) { 
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune transaction trouvée.</td></tr>';
+        mobileContainer.innerHTML = '<div class="alert alert-success">Aucune transaction trouvée.</div>';
+        return; 
+    }
+    
+    // Desktop table
     tbody.innerHTML = filtered.map(t => `<tr><td>${new Date(t.date).toLocaleDateString('fr-FR')}</td><td><span class="status-badge status-${{entree:'in', sortie:'out', retour:'return'}[t.type]}">${t.type}</span></td><td>${(t.wines_involved || []).map(w => {
         let qtyDisplay = '';
         if (w.cases && w.bottles) {
@@ -727,30 +904,95 @@ function updateTransactionsTable() {
             qtyDisplay = `${w.quantity || 0}b`;
         }
         return `${w.name} (${qtyDisplay})`;
-    }).join(', ')}</td><td>${t.reference || 'N/A'}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteTransaction(${t.id})">Supprimer</button></td></tr>`).join('');
+    }).join(', ')}</td><td>${t.reference || 'N/A'}</td><td><button class="btn btn-secondary btn-small" onclick="openEditModal(${t.id})" style="margin-right: 8px;">Modifier</button><button class="btn btn-danger btn-small" onclick="deleteTransaction(${t.id})">Supprimer</button></td></tr>`).join('');
+
+    // Mobile cards
+    mobileContainer.innerHTML = filtered.map(t => {
+        const winesDisplay = (t.wines_involved || []).map(w => {
+            let qtyDisplay = '';
+            if (w.cases && w.bottles) {
+                qtyDisplay = `${w.cases}c + ${w.bottles}b`;
+            } else if (w.cases) {
+                qtyDisplay = `${w.cases}c`;
+            } else if (w.bottles) {
+                qtyDisplay = `${w.bottles}b`;
+            } else {
+                qtyDisplay = `${w.quantity || 0}b`;
+            }
+            return `${w.name} (${qtyDisplay})`;
+        }).join(', ');
+        
+        return `
+            <div class="mobile-card">
+                <div class="mobile-card-header">
+                    <span><strong>${new Date(t.date).toLocaleDateString('fr-FR')}</strong></span>
+                    <span class="status-badge status-${{entree:'in', sortie:'out', retour:'return'}[t.type]}">${t.type}</span>
+                </div>
+                <div class="mobile-card-content">
+                    <div class="mobile-card-row">
+                        <span class="label">Vins:</span>
+                        <span>${winesDisplay}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="label">Référence:</span>
+                        <span>${t.reference || 'N/A'}</span>
+                    </div>
+                </div>
+                <div class="mobile-card-actions">
+                    <button class="btn btn-secondary btn-small" onclick="openEditModal(${t.id})">Modifier</button>
+                    <button class="btn btn-danger btn-small" onclick="deleteTransaction(${t.id})">Supprimer</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function updateWineList() {
     const tbody = document.getElementById('wineList');
+    const mobileContainer = document.getElementById('wineListMobile');
     const search = document.getElementById('wineSearch').value.toLowerCase();
     const sortType = document.getElementById('catalogSort').value;
     const filtered = state.wines.filter(w => w.name.toLowerCase().includes(search));
     
     if (filtered.length === 0) { 
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun vin ne correspond à votre recherche.</td></tr>'; 
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun vin ne correspond à votre recherche.</td></tr>';
+        mobileContainer.innerHTML = '<div class="alert alert-success">Aucun vin ne correspond à votre recherche.</div>';
         return; 
     }
     
     const sortedWines = getSortedWines(filtered, sortType);
-    tbody.innerHTML = sortedWines.map(wine => `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td><span class="type-badge badge-${wine.type}">${wine.type}</span></td><td>${wine.bottles_per_case}</td><td><button class="btn btn-danger btn-small" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteWine(${wine.id})">Supprimer</button></td></tr>`).join('');
+    
+    // Desktop table
+    tbody.innerHTML = sortedWines.map(wine => `<tr><td>${getWineEmoji(wine.type)} ${wine.name}</td><td><span class="type-badge badge-${wine.type}">${wine.type}</span></td><td>${wine.bottles_per_case}</td><td><button class="btn btn-danger btn-small" onclick="deleteWine(${wine.id})">Supprimer</button></td></tr>`).join('');
+
+    // Mobile cards
+    mobileContainer.innerHTML = sortedWines.map(wine => `
+        <div class="mobile-card">
+            <div class="mobile-card-header">
+                <span><strong>${getWineEmoji(wine.type)} ${wine.name}</strong></span>
+                <span class="type-badge badge-${wine.type}">${wine.type}</span>
+            </div>
+            <div class="mobile-card-content">
+                <div class="mobile-card-row">
+                    <span class="label">Bouteilles / Caisse:</span>
+                    <span>${wine.bottles_per_case}</span>
+                </div>
+            </div>
+            <div class="mobile-card-actions">
+                <button class="btn btn-danger btn-small" onclick="deleteWine(${wine.id})">Supprimer</button>
+            </div>
+        </div>
+    `).join('');
 }
 
 function updateAnalysisTable() {
     const tbody = document.getElementById('analysisTable');
+    const mobileContainer = document.getElementById('analysisTableMobile');
     const sortType = document.getElementById('analysisSort').value;
     
     if (state.wines.length === 0) { 
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune donnée à analyser.</td></tr>'; 
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">Aucune donnée à analyser.</td></tr>';
+        mobileContainer.innerHTML = '<div class="alert alert-success">Aucune donnée à analyser.</div>';
         return; 
     }
     
@@ -765,7 +1007,6 @@ function updateAnalysisTable() {
         return { name: wine.name, type: wine.type, ...movements, netConsumption, returnRate: parseFloat(returnRate) };
     });
     
-    // Tri des données d'analyse
     switch(sortType) {
         case 'consumption':
             analysisData.sort((a, b) => b.netConsumption - a.netConsumption);
@@ -776,24 +1017,77 @@ function updateAnalysisTable() {
         case 'rate':
             analysisData.sort((a, b) => b.returnRate - a.returnRate);
             break;
-        default: // 'name'
+        default:
             analysisData.sort((a, b) => a.name.localeCompare(b.name));
     }
     
+    // Desktop table
     tbody.innerHTML = analysisData.map(data => `<tr><td>${getWineEmoji(data.type)} ${data.name}</td><td>${data.sortie}</td><td>${data.retour}</td><td><strong>${data.netConsumption}</strong></td><td>${data.returnRate} %</td></tr>`).join('');
+
+    // Mobile cards
+    mobileContainer.innerHTML = analysisData.map(data => `
+        <div class="mobile-card">
+            <div class="mobile-card-header">
+                <span><strong>${getWineEmoji(data.type)} ${data.name}</strong></span>
+            </div>
+            <div class="mobile-card-content">
+                <div class="mobile-card-row">
+                    <span class="label">Total Sorties:</span>
+                    <span>${data.sortie}</span>
+                </div>
+                <div class="mobile-card-row">
+                    <span class="label">Total Retours:</span>
+                    <span>${data.retour}</span>
+                </div>
+                <div class="mobile-card-row">
+                    <span class="label">Consommation Nette:</span>
+                    <span><strong>${data.netConsumption}</strong></span>
+                </div>
+                <div class="mobile-card-row">
+                    <span class="label">Taux de Retour:</span>
+                    <span>${data.returnRate} %</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
 }
 
 function setFormDisabled(isDisabled) { document.querySelectorAll('button, input, select').forEach(el => el.disabled = isDisabled); }
 function switchTab(tabName) { document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelector(`[data-tab="${tabName}"]`).classList.add('active'); document.getElementById(tabName).classList.add('active'); const updateFn = { 'dashboard': updateDashboard, 'transactions': updateTransactionsTable, 'catalog': updateWineList, 'analysis': updateAnalysisTable }[tabName]; if (updateFn) updateFn(); }
 function updateAll() { 
-    // Pas besoin de recalculer le stock total car on utilise maintenant getWineStockInfo()
     updateDashboard(); updateWineSelects(); updateTransactionsTable(); updateWineList(); updateAnalysisTable(); 
 }
 function showToast(message) { const toast = document.getElementById('toast'); document.getElementById('toastMsg').textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }
-function addWineEntry() { const container = document.getElementById('wineEntries'); const newId = Date.now(); const entryDiv = document.createElement('div'); entryDiv.className = 'wine-entry'; entryDiv.innerHTML = `<div class="form-group"><label class="form-label" for="wine-select-${newId}">Vin</label><select class="form-control wine-select" id="wine-select-${newId}" required></select></div><div class="form-group"><label class="form-label" for="wine-cases-${newId}">Caisses</label><input type="number" class="form-control wine-cases" id="wine-cases-${newId}" min="0" placeholder="0"></div><div class="form-group"><label class="form-label" for="wine-bottles-${newId}">Bouteilles</label><input type="number" class="form-control wine-bottles" id="wine-bottles-${newId}" min="0" placeholder="0"><div class="stock-validator"></div></div><button type="button" class="btn btn-danger remove-btn">✕</button>`; container.appendChild(entryDiv); updateWineSelects(); entryDiv.querySelector('.remove-btn').addEventListener('click', () => entryDiv.remove()); }
+
+function addWineEntry(containerId = 'wineEntries') { 
+    const container = document.getElementById(containerId); 
+    const newId = Date.now(); 
+    const entryDiv = document.createElement('div'); 
+    entryDiv.className = 'wine-entry'; 
+    entryDiv.innerHTML = `<div class="form-group"><label class="form-label" for="wine-select-${newId}">Vin</label><select class="form-control wine-select" id="wine-select-${newId}" required></select></div><div class="form-group"><label class="form-label" for="wine-cases-${newId}">Caisses</label><input type="number" class="form-control wine-cases" id="wine-cases-${newId}" min="0" placeholder="0"></div><div class="form-group"><label class="form-label" for="wine-bottles-${newId}">Bouteilles</label><input type="number" class="form-control wine-bottles" id="wine-bottles-${newId}" min="0" placeholder="0"><div class="stock-validator"></div></div><button type="button" class="btn btn-danger remove-btn">✕</button>`; 
+    container.appendChild(entryDiv); 
+    updateWineSelects(); 
+    entryDiv.querySelector('.remove-btn').addEventListener('click', () => entryDiv.remove()); 
+}
+
 function resetTransactionForm() { document.getElementById('transactionForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('wineEntries').innerHTML = ''; addWineEntry(); }
 function getWineEmoji(type) { return { rouge: '🍷', blanc: '🥂', rose: '🌹', champagne: '🍾' }[type] || '🍇'; }
-function initRealTimeValidation() { const quickForm = document.getElementById('quickForm'); const transactionForm = document.getElementById('transactionForm'); quickForm.addEventListener('input', e => { if (['quickQtyCases', 'quickQtyBottles'].includes(e.target.id)) validateQuickForm(); }); quickForm.addEventListener('change', e => { if (['quickType', 'quickWine'].includes(e.target.id)) validateQuickForm(); }); transactionForm.addEventListener('input', e => { const entry = e.target.closest('.wine-entry'); if (entry) validateStockForRow(entry); }); transactionForm.addEventListener('change', e => { const entry = e.target.closest('.wine-entry'); if(entry) validateStockForRow(entry); if (e.target.id === 'type') document.querySelectorAll('.wine-entry').forEach(validateStockForRow); }); }
+
+function initRealTimeValidation() { 
+    const quickForm = document.getElementById('quickForm'); 
+    const transactionForm = document.getElementById('transactionForm'); 
+    const editForm = document.getElementById('editTransactionForm');
+    
+    quickForm.addEventListener('input', e => { if (['quickQtyCases', 'quickQtyBottles'].includes(e.target.id)) validateQuickForm(); }); 
+    quickForm.addEventListener('change', e => { if (['quickType', 'quickWine'].includes(e.target.id)) validateQuickForm(); }); 
+    
+    transactionForm.addEventListener('input', e => { const entry = e.target.closest('.wine-entry'); if (entry) validateStockForRow(entry); }); 
+    transactionForm.addEventListener('change', e => { const entry = e.target.closest('.wine-entry'); if(entry) validateStockForRow(entry); if (e.target.id === 'type') document.querySelectorAll('#wineEntries .wine-entry').forEach(validateStockForRow); }); 
+    
+    editForm.addEventListener('input', e => { const entry = e.target.closest('.wine-entry'); if (entry) validateStockForRow(entry, 'editType'); }); 
+    editForm.addEventListener('change', e => { const entry = e.target.closest('.wine-entry'); if(entry) validateStockForRow(entry, 'editType'); if (e.target.id === 'editType') document.querySelectorAll('#editWineEntries .wine-entry').forEach(entry => validateStockForRow(entry, 'editType')); }); 
+}
+
 function validateQuickForm() { 
     const type = document.getElementById('quickType').value; 
     const validatorEl = document.getElementById('quickStockValidator'); 
@@ -817,8 +1111,8 @@ function validateQuickForm() {
     } 
 }
 
-function validateStockForRow(entryElement) { 
-    const type = document.getElementById('type').value; 
+function validateStockForRow(entryElement, typeFieldId = 'type') { 
+    const type = document.getElementById(typeFieldId).value; 
     const validatorEl = entryElement.querySelector('.stock-validator'); 
     validatorEl.textContent = ''; 
     validatorEl.className = 'stock-validator'; 
@@ -829,7 +1123,24 @@ function validateStockForRow(entryElement) {
     if (!wineId || (cases === 0 && bottles === 0)) return; 
     const wine = state.wines.find(w => w.id === wineId); 
     if (!wine) return; 
-    const stockInfo = getWineStockInfo(wine);
+    
+    let stockInfo = getWineStockInfo(wine);
+    
+    // Si on modifie une transaction, on doit considérer le stock restauré
+    if (typeFieldId === 'editType' && state.editingTransaction) {
+        const oldWine = (state.editingTransaction.wines_involved || []).find(w => w.id === wineId);
+        if (oldWine) {
+            const oldMultiplier = state.editingTransaction.type === 'sortie' ? 1 : -1;
+            const restoredCases = stockInfo.cases + ((oldWine.cases || 0) * oldMultiplier);
+            const restoredBottles = stockInfo.bottles + ((oldWine.bottles || 0) * oldMultiplier);
+            stockInfo = {
+                cases: restoredCases,
+                bottles: restoredBottles,
+                total: restoredCases * wine.bottles_per_case + restoredBottles
+            };
+        }
+    }
+    
     const totalQuantityNeeded = (cases * wine.bottles_per_case) + bottles; 
     if (totalQuantityNeeded > stockInfo.total) { 
         validatorEl.textContent = `⚠️ Stock insuffisant (Reste : ${stockInfo.total})`; 
@@ -839,7 +1150,26 @@ function validateStockForRow(entryElement) {
         validatorEl.classList.add('valid'); 
     } 
 }
-function updateWineSelects() { document.querySelectorAll('.wine-select').forEach(select => { const currentVal = select.value; select.innerHTML = '<option value="">Choisir un vin...</option>'; ['rouge', 'blanc', 'rose', 'champagne'].forEach(type => { const winesOfType = state.wines.filter(w => w.type === type); if (winesOfType.length > 0) { const optgroup = document.createElement('optgroup'); optgroup.label = `${getWineEmoji(type)} ${type.charAt(0).toUpperCase() + type.slice(1)}s`; winesOfType.sort((a,b) => a.name.localeCompare(b.name)).forEach(wine => { optgroup.innerHTML += `<option value="${wine.id}">${wine.name}</option>`; }); select.appendChild(optgroup); } }); select.value = currentVal; }); }
+
+function updateWineSelects() { 
+    document.querySelectorAll('.wine-select').forEach(select => { 
+        const currentVal = select.value; 
+        select.innerHTML = '<option value="">Choisir un vin...</option>'; 
+        ['rouge', 'blanc', 'rose', 'champagne'].forEach(type => { 
+            const winesOfType = state.wines.filter(w => w.type === type); 
+            if (winesOfType.length > 0) { 
+                const optgroup = document.createElement('optgroup'); 
+                optgroup.label = `${getWineEmoji(type)} ${type.charAt(0).toUpperCase() + type.slice(1)}s`; 
+                winesOfType.sort((a,b) => a.name.localeCompare(b.name)).forEach(wine => { 
+                    optgroup.innerHTML += `<option value="${wine.id}">${wine.name}</option>`; 
+                }); 
+                select.appendChild(optgroup); 
+            } 
+        }); 
+        select.value = currentVal; 
+    }); 
+}
+
 function exportData() { 
     let csvContent = "data:text/csv;charset=utf-8,ID Vin,Nom,Type,Stock Caisses,Stock Bouteilles,Total Bouteilles,Bouteilles par Caisse\r\n"; 
     state.wines.forEach(w => { 
@@ -851,7 +1181,13 @@ function exportData() {
     link.download = `inventaire_${new Date().toISOString().split('T')[0]}.csv`; 
     link.click(); 
 }
-function printInventory() { const printWindow = window.open('', '_blank'); printWindow.document.write(`<html><head><title>Inventaire des Vins</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%; border-collapse:collapse;} th,td{border:1px solid #ccc; padding:8px; text-align:left;}</style></head><body><h1>Inventaire au ${new Date().toLocaleDateString('fr-FR')}</h1>${document.querySelector('#detailedInventory').parentElement.outerHTML}</body></html>`); printWindow.document.close(); setTimeout(() => printWindow.print(), 500); }
+
+function printInventory() { 
+    const printWindow = window.open('', '_blank'); 
+    printWindow.document.write(`<html><head><title>Inventaire des Vins</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%; border-collapse:collapse;} th,td{border:1px solid #ccc; padding:8px; text-align:left;}</style></head><body><h1>Inventaire au ${new Date().toLocaleDateString('fr-FR')}</h1>${document.querySelector('#detailedInventory').parentElement.outerHTML}</body></html>`); 
+    printWindow.document.close(); 
+    setTimeout(() => printWindow.print(), 500); 
+}
 </script>
 </body>
 </html>
