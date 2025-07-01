@@ -87,6 +87,168 @@
         .stock-display { display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .stock-display .total { font-weight: 600; font-size: 1.1rem; }
         .stock-display .breakdown { font-size: 0.85rem; color: var(--text-light-color); }
+
+        /* ===================================================================================
+           RESPONSIVE DESIGN FOR MOBILE
+           =================================================================================== */
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 16px; /* Less padding on smaller screens */
+            }
+
+            .header h1 {
+                font-size: 2rem; /* Slightly smaller header on mobile */
+            }
+
+            .header h2 {
+                font-size: 1rem;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap; /* Allow tabs to wrap to next line */
+                justify-content: center; /* Center tabs */
+                gap: 4px; /* Smaller gap between tabs */
+                margin-bottom: 24px;
+            }
+
+            .nav-tab {
+                padding: 10px 14px; /* Smaller padding for tabs */
+                font-size: 0.9rem;
+            }
+
+            .card {
+                padding: 20px; /* Smaller card padding */
+            }
+
+            .card-header {
+                margin-bottom: 16px;
+                padding-bottom: 12px;
+            }
+
+            .card-title {
+                font-size: 1.3rem; /* Smaller card title */
+            }
+
+            .form-actions {
+                flex-direction: column; /* Stack buttons vertically */
+                gap: 10px; /* Smaller gap for stacked buttons */
+            }
+
+            .btn {
+                width: 100%; /* Full width buttons */
+                justify-content: center; /* Center content in buttons */
+            }
+
+            .table-controls {
+                flex-direction: column; /* Stack table controls */
+                align-items: flex-start; /* Align controls to start */
+                gap: 12px;
+                margin-bottom: 16px;
+            }
+
+            .sort-controls {
+                width: 100%; /* Make sort controls full width */
+                justify-content: space-between; /* Space out label and select */
+            }
+
+            .sort-controls select {
+                width: calc(100% - 80px); /* Adjust select width to fit */
+                min-width: unset !important; /* Override min-width */
+            }
+
+            table {
+                font-size: 0.85rem; /* Smaller font size for tables */
+                display: block; /* Allow table to scroll horizontally */
+                overflow-x: auto; /* Enable horizontal scrolling */
+                white-space: nowrap; /* Prevent text wrapping in table cells */
+            }
+
+            th, td {
+                padding: 12px; /* Smaller padding in table cells */
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr; /* Single column for dashboard cards */
+                gap: 16px; /* Smaller gap for dashboard cards */
+            }
+
+            .low-stock-card .stock {
+                font-size: 2rem; /* Slightly smaller stock number */
+            }
+
+            .wine-entry {
+                grid-template-columns: 1fr; /* Stack wine entry fields vertically */
+                gap: 10px; /* Smaller gap for wine entry fields */
+                padding: 12px;
+            }
+
+            .wine-entry .form-group {
+                margin-bottom: 0; /* Remove margin between stacked form groups */
+            }
+
+            .remove-btn {
+                margin-top: 0; /* Align remove button when stacked */
+                width: 100%;
+            }
+
+            /* Adjust quick transaction form layout */
+            #quickForm > div {
+                grid-template-columns: 1fr !important; /* Single column for quick form */
+                gap: 10px;
+            }
+
+            /* Adjust add wine form layout */
+            #addWineForm {
+                grid-template-columns: 1fr !important; /* Single column for add wine form */
+                gap: 10px;
+                align-items: stretch; /* Stretch items to fill width */
+            }
+            #addWineForm .form-group {
+                margin-bottom: 0;
+            }
+            #addWineForm .btn {
+                 height: auto; /* Allow button to adjust height */
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .header h2 {
+                font-size: 0.9rem;
+            }
+            .nav-tab {
+                font-size: 0.85rem;
+                padding: 8px 10px;
+            }
+            .card {
+                padding: 15px;
+            }
+            .card-title {
+                font-size: 1.2rem;
+            }
+            .btn {
+                font-size: 0.9rem;
+                padding: 10px 20px;
+            }
+            .form-control {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+            th, td {
+                padding: 10px;
+                font-size: 0.8rem;
+            }
+            .low-stock-card .stock {
+                font-size: 1.8rem;
+            }
+            .toast {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+                bottom: 10px; /* Closer to bottom on very small screens */
+            }
+        }
     </style>
 </head>
 <body>
@@ -225,7 +387,7 @@
 // CONFIGURATION SUPABASE
 // ===================================================================================
 const SUPABASE_URL = "https://jvthgikhwaxiqxsjmacl.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dGhnaWtod2F4aXF4c2ptYWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzNDg4MjMsImV4cCI6MjA2NDkyNDgyM30.f5ixqtktLbDRPT2IyJodmMBbYD2ZK7TRfCNszz2nM48";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dGhnaWtod2F4aXF4c2ptYWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzNDg4MjMsImexCI6MjA2NDkyNDgyM30.f5ixqtktLbDRPT2IyJodmMBbYD2ZK7TRfCNszz2nM48";
 
 const apiHeaders = {
     'apikey': SUPABASE_KEY,
